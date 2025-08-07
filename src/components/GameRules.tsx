@@ -7,7 +7,7 @@ export const GameRules = () => {
         <p className="text-sm text-foreground">
           <span className="font-medium">3 очка</span> за точный счет • <span className="font-medium">1 очко</span> за точный результат
         </p>
-        <p className="text-xs text-muted-foreground">Время указано по Москве</p>
+        <p className="text-xs text-muted-foreground">Обратная связь @fabiocapello</p>
       </div>
     </Card>
   );
