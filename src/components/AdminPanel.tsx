@@ -7,12 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit2, Save, X } from "lucide-react";
 import { useMatches } from "@/hooks/useMatches";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { type Match, type CreateMatchData } from "@/lib/supabase";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AdminPanel = () => {
   const { matches, loading, createMatch, updateMatch, deleteMatch } = useMatches();
+  const { leaderboard, loading: leaderboardLoading, createPlayer, updatePlayerStats, deletePlayer } = useLeaderboard();
 
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
+  const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
   const [newMatch, setNewMatch] = useState<CreateMatchData>({
     home_team: "",
     away_team: "",
@@ -23,6 +27,12 @@ export const AdminPanel = () => {
     status: "upcoming"
   });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddPlayerForm, setShowAddPlayerForm] = useState(false);
+  const [newPlayer, setNewPlayer] = useState({
+    name: "",
+    email: "",
+    avatar_url: ""
+  });
 
   const handleEditMatch = (matchId: string) => {
     setEditingMatch(matchId);
@@ -59,6 +69,33 @@ export const AdminPanel = () => {
     }
   };
 
+  const handleEditPlayer = (playerId: string) => {
+    setEditingPlayer(playerId);
+  };
+
+  const handleSavePlayer = async (playerId: string, updatedStats: any) => {
+    const success = await updatePlayerStats({ player_id: playerId, ...updatedStats });
+    if (success) {
+      setEditingPlayer(null);
+    }
+  };
+
+  const handleDeletePlayer = async (playerId: string) => {
+    await deletePlayer(playerId);
+  };
+
+  const handleAddPlayer = async () => {
+    if (!newPlayer.name) {
+      return;
+    }
+
+    const success = await createPlayer(newPlayer);
+    if (success) {
+      setNewPlayer({ name: "", email: "", avatar_url: "" });
+      setShowAddPlayerForm(false);
+    }
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "live":
@@ -85,16 +122,28 @@ export const AdminPanel = () => {
 
   return (
     <div className="space-y-6">
-      {loading && (
+      {(loading || leaderboardLoading) && (
         <div className="text-center py-4">
-          <p className="text-muted-foreground">Загрузка матчей...</p>
+          <p className="text-muted-foreground">Загрузка данных...</p>
         </div>
       )}
       
+      <div>
+        <h2 className="text-xl font-medium text-foreground">Админ-панель</h2>
+        <p className="text-sm text-muted-foreground">Управление матчами и игроками</p>
+      </div>
+
+      <Tabs defaultValue="matches" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="matches">Матчи</TabsTrigger>
+          <TabsTrigger value="players">Игроки</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="matches" className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-medium text-foreground">Админ-панель</h2>
-          <p className="text-sm text-muted-foreground">Управление событиями для ставок</p>
+            <h3 className="text-lg font-medium text-foreground">Управление матчами</h3>
+            <p className="text-sm text-muted-foreground">Создание и редактирование матчей</p>
         </div>
         <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
           <Plus className="w-4 h-4" />
@@ -207,6 +256,77 @@ export const AdminPanel = () => {
           />
         ))}
       </div>
+        </TabsContent>
+
+        <TabsContent value="players" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-foreground">Управление игроками</h3>
+              <p className="text-sm text-muted-foreground">Создание и редактирование игроков</p>
+            </div>
+            <Button onClick={() => setShowAddPlayerForm(true)} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Добавить игрока
+            </Button>
+          </div>
+
+          {/* Add New Player Form */}
+          {showAddPlayerForm && (
+            <Card className="p-6 border border-border">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Новый игрок</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setShowAddPlayerForm(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="playerName">Имя игрока *</Label>
+                    <Input
+                      id="playerName"
+                      value={newPlayer.name}
+                      onChange={(e) => setNewPlayer(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Имя игрока"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="playerEmail">Email</Label>
+                    <Input
+                      id="playerEmail"
+                      type="email"
+                      value={newPlayer.email}
+                      onChange={(e) => setNewPlayer(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button onClick={handleAddPlayer}>Создать игрока</Button>
+                  <Button variant="outline" onClick={() => setShowAddPlayerForm(false)}>Отмена</Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Players List */}
+          <div className="space-y-4">
+            {leaderboard.map((entry) => (
+              <PlayerEditCard
+                key={entry.player.id}
+                entry={entry}
+                isEditing={editingPlayer === entry.player.id}
+                onEdit={() => handleEditPlayer(entry.player.id)}
+                onSave={(updatedStats) => handleSavePlayer(entry.player.id, updatedStats)}
+                onCancel={() => setEditingPlayer(null)}
+                onDelete={() => handleDeletePlayer(entry.player.id)}
+              />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
@@ -333,6 +453,131 @@ const MatchEditCard = ({
             <span>{match.match_date} • {match.match_time}</span>
             <span>{match.league}</span>
             <span>{match.stage}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            <Edit2 className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={onDelete}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+interface PlayerEditCardProps {
+  entry: any;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: (stats: any) => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}
+
+const PlayerEditCard = ({ 
+  entry, 
+  isEditing, 
+  onEdit, 
+  onSave, 
+  onCancel, 
+  onDelete 
+}: PlayerEditCardProps) => {
+  const [editData, setEditData] = useState({
+    points: entry.stats.points,
+    correct_predictions: entry.stats.correct_predictions,
+    total_predictions: entry.stats.total_predictions,
+    current_streak: entry.stats.current_streak,
+    best_streak: entry.stats.best_streak
+  });
+
+  const handleSave = () => {
+    onSave(editData);
+  };
+
+  if (isEditing) {
+    return (
+      <Card className="p-6 border border-border">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Редактирование: {entry.player.name}</h3>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave}>
+                <Save className="w-4 h-4 mr-2" />
+                Сохранить
+              </Button>
+              <Button variant="outline" size="sm" onClick={onCancel}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Очки</Label>
+              <Input
+                type="number"
+                value={editData.points}
+                onChange={(e) => setEditData(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <Label>Верные прогнозы</Label>
+              <Input
+                type="number"
+                value={editData.correct_predictions}
+                onChange={(e) => setEditData(prev => ({ ...prev, correct_predictions: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <Label>Всего прогнозов</Label>
+              <Input
+                type="number"
+                value={editData.total_predictions}
+                onChange={(e) => setEditData(prev => ({ ...prev, total_predictions: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <Label>Текущая серия</Label>
+              <Input
+                type="number"
+                value={editData.current_streak}
+                onChange={(e) => setEditData(prev => ({ ...prev, current_streak: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+            <div>
+              <Label>Лучшая серия</Label>
+              <Input
+                type="number"
+                value={editData.best_streak}
+                onChange={(e) => setEditData(prev => ({ ...prev, best_streak: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6 border border-border hover:shadow-hover transition-shadow">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-medium text-foreground">
+              #{entry.stats.rank_position} {entry.player.name}
+            </h3>
+            <Badge variant="secondary">
+              {entry.stats.points} очков
+            </Badge>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>{entry.stats.correct_predictions}/{entry.stats.total_predictions} верных</span>
+            <span>{entry.accuracy}% точность</span>
+            <span>Серия: {entry.stats.current_streak}</span>
           </div>
         </div>
         

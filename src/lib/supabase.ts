@@ -40,3 +40,46 @@ export interface CreateMatchData {
 export interface UpdateMatchData extends Partial<CreateMatchData> {
   id: string;
 }
+
+// Типы для игроков и лидерборда
+export interface Player {
+  id: string;
+  name: string;
+  email?: string | null;
+  avatar_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlayerStats {
+  id: string;
+  player_id: string;
+  points: number;
+  correct_predictions: number;
+  total_predictions: number;
+  current_streak: number;
+  best_streak: number;
+  rank_position: number;
+  updated_at: string;
+}
+
+export interface LeaderboardEntry {
+  player: Player;
+  stats: PlayerStats;
+  accuracy: number;
+}
+
+export interface CreatePlayerData {
+  name: string;
+  email?: string;
+  avatar_url?: string;
+}
+
+export interface UpdatePlayerStatsData {
+  player_id: string;
+  points?: number;
+  correct_predictions?: number;
+  total_predictions?: number;
+  current_streak?: number;
+  best_streak?: number;
+}
