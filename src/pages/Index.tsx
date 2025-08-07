@@ -4,51 +4,22 @@ import { Leaderboard } from "@/components/Leaderboard";
 import { StatsCard } from "@/components/StatsCard";
 import { GameRules } from "@/components/GameRules";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMatches } from "@/hooks/useMatches";
 
 const Index = () => {
-  // Mock data for matches
-  const mockMatches = [
-    {
-      id: "1",
-      homeTeam: "CSKA",
-      awayTeam: "Spartak",
-      date: "15/04/2025",
-      time: "21:00 МСК",
-      league: "RPL",
-      stage: "Matchday 3",
-      status: "finished" as const
-    },
-    {
-      id: "2", 
-      homeTeam: "Baltika",
-      awayTeam: "Pari NN",
-      date: "15/04/2025",
-      time: "00:00 МСК",
-      league: "RPL",
-      stage: "1/4 Final",
-      status: "finished" as const
-    },
-    {
-      id: "3",
-      homeTeam: "PSG",
-      awayTeam: "Marseille",
-      date: "15/04/2025",
-      time: "23:00 МСК",
-      league: "Ligue 1",
-      stage: "Round 15",
-      status: "live" as const
-    },
-    {
-      id: "4",
-      homeTeam: "Bayern Munich",
-      awayTeam: "Werder",
-      date: "15/04/2025",
-      time: "19:30 МСК",
-      league: "Bundesliga",
-      stage: "Der Klassiker",
-      status: "upcoming" as const
-    }
-  ];
+  const { matches, loading } = useMatches();
+
+  // Преобразуем данные из базы в формат для компонентов
+  const formattedMatches = matches.map(match => ({
+    id: match.id,
+    homeTeam: match.home_team,
+    awayTeam: match.away_team,
+    date: match.match_date,
+    time: match.match_time,
+    league: match.league,
+    stage: match.stage,
+    status: match.status
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,9 +46,15 @@ const Index = () => {
             </TabsList>
 
             <TabsContent value="matches" className="space-y-8 mt-12">
+              {loading ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Загрузка матчей...</p>
+                </div>
+              ) : (
               <div className="max-w-md mx-auto">
-                <MatchSlider matches={mockMatches} />
+                <MatchSlider matches={formattedMatches} />
               </div>
+              )}
               <GameRules />
             </TabsContent>
 

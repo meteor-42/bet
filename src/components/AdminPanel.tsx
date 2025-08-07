@@ -6,70 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit2, Save, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface Match {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  date: string;
-  time: string;
-  league: string;
-  stage: string;
-  status: "upcoming" | "live" | "finished";
-}
+import { useMatches } from "@/hooks/useMatches";
+import { type Match, type CreateMatchData } from "@/lib/supabase";
 
 export const AdminPanel = () => {
-  const { toast } = useToast();
-  const [matches, setMatches] = useState<Match[]>([
-    {
-      id: "1",
-      homeTeam: "CSKA",
-      awayTeam: "Spartak",
-      date: "15 дек",
-      time: "21:00 МСК",
-      league: "RPL",
-      stage: "Matchday 3",
-      status: "upcoming"
-    },
-    {
-      id: "2", 
-      homeTeam: "Baltika",
-      awayTeam: "Pari NN",
-      date: "16 дек",
-      time: "00:00 МСК",
-      league: "RPL",
-      stage: "1/4 Final",
-      status: "finished"
-    },
-    {
-      id: "3",
-      homeTeam: "PSG",
-      awayTeam: "Marseille",
-      date: "14 дек",
-      time: "23:00 МСК",
-      league: "Ligue 1",
-      stage: "Round 15",
-      status: "live"
-    },
-    {
-      id: "4",
-      homeTeam: "Bayern Munich",
-      awayTeam: "Werder",
-      date: "17 дек",
-      time: "19:30 МСК",
-      league: "Bundesliga",
-      stage: "Der Klassiker",
-      status: "upcoming"
-    }
-  ]);
+  const { matches, loading, createMatch, updateMatch, deleteMatch } = useMatches();
 
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
-  const [newMatch, setNewMatch] = useState<Partial<Match>>({
-    homeTeam: "",
-    awayTeam: "",
-    date: "",
-    time: "",
+  const [newMatch, setNewMatch] = useState<CreateMatchData>({
+    home_team: "",
+    away_team: "",
+    match_date: "",
+    match_time: "",
     league: "",
     stage: "",
     status: "upcoming"
@@ -80,61 +28,35 @@ export const AdminPanel = () => {
     setEditingMatch(matchId);
   };
 
-  const handleSaveMatch = (matchId: string, updatedMatch: Partial<Match>) => {
-    setMatches(prev => prev.map(match => 
-      match.id === matchId ? { ...match, ...updatedMatch } : match
-    ));
-    setEditingMatch(null);
-    toast({
-      title: "Матч обновлен",
-      description: "Изменения успешно сохранены"
-    });
+  const handleSaveMatch = async (matchId: string, updatedMatch: Partial<Match>) => {
+    const success = await updateMatch({ id: matchId, ...updatedMatch });
+    if (success) {
+      setEditingMatch(null);
+    }
   };
 
-  const handleDeleteMatch = (matchId: string) => {
-    setMatches(prev => prev.filter(match => match.id !== matchId));
-    toast({
-      title: "Матч удален",
-      description: "Событие было удалено из системы"
-    });
+  const handleDeleteMatch = async (matchId: string) => {
+    await deleteMatch(matchId);
   };
 
-  const handleAddMatch = () => {
-    if (!newMatch.homeTeam || !newMatch.awayTeam || !newMatch.date || !newMatch.time) {
-      toast({
-        title: "Ошибка",
-        description: "Заполните все обязательные поля",
-        variant: "destructive"
-      });
+  const handleAddMatch = async () => {
+    if (!newMatch.home_team || !newMatch.away_team || !newMatch.match_date || !newMatch.match_time) {
       return;
     }
 
-    const match: Match = {
-      id: Date.now().toString(),
-      homeTeam: newMatch.homeTeam!,
-      awayTeam: newMatch.awayTeam!,
-      date: newMatch.date!,
-      time: newMatch.time!,
-      league: newMatch.league || "",
-      stage: newMatch.stage || "",
-      status: newMatch.status as "upcoming" | "live" | "finished" || "upcoming"
-    };
-
-    setMatches(prev => [...prev, match]);
-    setNewMatch({
-      homeTeam: "",
-      awayTeam: "",
-      date: "",
-      time: "",
-      league: "",
-      stage: "",
-      status: "upcoming"
-    });
-    setShowAddForm(false);
-    toast({
-      title: "Матч добавлен",
-      description: "Новое событие создано успешно"
-    });
+    const success = await createMatch(newMatch);
+    if (success) {
+      setNewMatch({
+        home_team: "",
+        away_team: "",
+        match_date: "",
+        match_time: "",
+        league: "",
+        stage: "",
+        status: "upcoming"
+      });
+      setShowAddForm(false);
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -163,6 +85,12 @@ export const AdminPanel = () => {
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-center py-4">
+          <p className="text-muted-foreground">Загрузка матчей...</p>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-foreground">Админ-панель</h2>
@@ -190,8 +118,8 @@ export const AdminPanel = () => {
                 <Label htmlFor="homeTeam">Домашняя команда *</Label>
                 <Input
                   id="homeTeam"
-                  value={newMatch.homeTeam || ""}
-                  onChange={(e) => setNewMatch(prev => ({ ...prev, homeTeam: e.target.value }))}
+                  value={newMatch.home_team || ""}
+                  onChange={(e) => setNewMatch(prev => ({ ...prev, home_team: e.target.value }))}
                   placeholder="Название команды"
                 />
               </div>
@@ -199,8 +127,8 @@ export const AdminPanel = () => {
                 <Label htmlFor="awayTeam">Гостевая команда *</Label>
                 <Input
                   id="awayTeam"
-                  value={newMatch.awayTeam || ""}
-                  onChange={(e) => setNewMatch(prev => ({ ...prev, awayTeam: e.target.value }))}
+                  value={newMatch.away_team || ""}
+                  onChange={(e) => setNewMatch(prev => ({ ...prev, away_team: e.target.value }))}
                   placeholder="Название команды"
                 />
               </div>
@@ -208,8 +136,8 @@ export const AdminPanel = () => {
                 <Label htmlFor="date">Дата *</Label>
                 <Input
                   id="date"
-                  value={newMatch.date || ""}
-                  onChange={(e) => setNewMatch(prev => ({ ...prev, date: e.target.value }))}
+                  value={newMatch.match_date || ""}
+                  onChange={(e) => setNewMatch(prev => ({ ...prev, match_date: e.target.value }))}
                   placeholder="15 дек"
                 />
               </div>
@@ -217,8 +145,8 @@ export const AdminPanel = () => {
                 <Label htmlFor="time">Время *</Label>
                 <Input
                   id="time"
-                  value={newMatch.time || ""}
-                  onChange={(e) => setNewMatch(prev => ({ ...prev, time: e.target.value }))}
+                  value={newMatch.match_time || ""}
+                  onChange={(e) => setNewMatch(prev => ({ ...prev, match_time: e.target.value }))}
                   placeholder="21:00 МСК"
                 />
               </div>
@@ -331,29 +259,29 @@ const MatchEditCard = ({
             <div>
               <Label>Домашняя команда</Label>
               <Input
-                value={editData.homeTeam || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, homeTeam: e.target.value }))}
+                value={editData.home_team || ""}
+                onChange={(e) => setEditData(prev => ({ ...prev, home_team: e.target.value }))}
               />
             </div>
             <div>
               <Label>Гостевая команда</Label>
               <Input
-                value={editData.awayTeam || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, awayTeam: e.target.value }))}
+                value={editData.away_team || ""}
+                onChange={(e) => setEditData(prev => ({ ...prev, away_team: e.target.value }))}
               />
             </div>
             <div>
               <Label>Дата</Label>
               <Input
-                value={editData.date || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                value={editData.match_date || ""}
+                onChange={(e) => setEditData(prev => ({ ...prev, match_date: e.target.value }))}
               />
             </div>
             <div>
               <Label>Время</Label>
               <Input
-                value={editData.time || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, time: e.target.value }))}
+                value={editData.match_time || ""}
+                onChange={(e) => setEditData(prev => ({ ...prev, match_time: e.target.value }))}
               />
             </div>
             <div>
@@ -395,14 +323,14 @@ const MatchEditCard = ({
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-medium text-foreground">
-              {match.homeTeam} vs {match.awayTeam}
+              {match.home_team} vs {match.away_team}
             </h3>
             <Badge variant={getStatusBadgeVariant(match.status)}>
               {getStatusText(match.status)}
             </Badge>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{match.date} • {match.time}</span>
+            <span>{match.match_date} • {match.match_time}</span>
             <span>{match.league}</span>
             <span>{match.stage}</span>
           </div>
