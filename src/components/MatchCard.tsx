@@ -174,7 +174,7 @@ export const MatchCard = ({ match }: MatchCardProps) => {
       {match.status === "live" && (
         <div className="pt-4 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
-            Текущий счет 1:3
+            Текущий счет матча 1:3
           </p>
         </div>
       )}
@@ -182,7 +182,7 @@ export const MatchCard = ({ match }: MatchCardProps) => {
       {match.status === "finished" && (
         <div className="pt-4 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
-            Cчет матча 1:1
+            Финальный счет матча 1:1
           </p>
         </div>
       )}
