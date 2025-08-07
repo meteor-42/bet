@@ -61,11 +61,11 @@ export const MatchCard = ({ match }: MatchCardProps) => {
   const getStatusText = (status: string) => {
     switch (status) {
       case "live":
-        return "LIVE";
+        return "ИДЕТ";
       case "upcoming":
-        return "UPCOMING";
+        return "ПРЕДСТОЯЩИЙ";
       case "finished":
-        return "FINISHED";
+        return "ЗАКОНЧЕН";
       default:
         return status.toUpperCase();
     }
