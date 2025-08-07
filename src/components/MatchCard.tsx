@@ -146,17 +146,6 @@ export const MatchCard = ({ match }: MatchCardProps) => {
           />
         </div>
       </div>
-
-      {/* Countdown */}
-      {match.status === "upcoming" && timeLeft && (
-        <div className="text-center py-1">
-          <div className="text-xs text-muted-foreground mb-1">До начала матча</div>
-          <div className="text-sm font-medium text-foreground">
-            {timeLeft.days > 0 && `${timeLeft.days}д `}
-            {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-          </div>
-        </div>
-      )}
       
       {/* Action Buttons */}
       {match.status === "upcoming" && (
