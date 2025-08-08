@@ -10,6 +10,8 @@ import { useMatches } from "@/hooks/useMatches";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { type Match, type CreateMatchData } from "@/lib/supabase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 
 export const AdminPanel = () => {
   const { matches, loading, createMatch, updateMatch, deleteMatch } = useMatches();
@@ -17,6 +19,20 @@ export const AdminPanel = () => {
 
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
+
+  // Пагинация для матчей
+  const matchesPagination = usePagination({
+    totalItems: matches.length,
+    itemsPerPage: 5,
+    initialPage: 1
+  });
+
+  // Пагинация для игроков
+  const playersPagination = usePagination({
+    totalItems: leaderboard.length,
+    itemsPerPage: 8,
+    initialPage: 1
+  });
   const [newMatch, setNewMatch] = useState<CreateMatchData>({
     home_team: "",
     away_team: "",
@@ -253,20 +269,36 @@ export const AdminPanel = () => {
 
       {/* Matches List */}
       <div className="space-y-4">
-        {matches.map((match) => (
-          <MatchEditCard
-            key={match.id}
-            match={match}
-            isEditing={editingMatch === match.id}
-            onEdit={() => handleEditMatch(match.id)}
-            onSave={(updatedMatch) => handleSaveMatch(match.id, updatedMatch)}
-            onCancel={() => setEditingMatch(null)}
-            onDelete={() => handleDeleteMatch(match.id)}
-            getStatusBadgeVariant={getStatusBadgeVariant}
-            getStatusText={getStatusText}
-          />
-        ))}
+        {matches
+          .slice(matchesPagination.startIndex, matchesPagination.endIndex)
+          .map((match) => (
+            <MatchEditCard
+              key={match.id}
+              match={match}
+              isEditing={editingMatch === match.id}
+              onEdit={() => handleEditMatch(match.id)}
+              onSave={(updatedMatch) => handleSaveMatch(match.id, updatedMatch)}
+              onCancel={() => setEditingMatch(null)}
+              onDelete={() => handleDeleteMatch(match.id)}
+              getStatusBadgeVariant={getStatusBadgeVariant}
+              getStatusText={getStatusText}
+            />
+          ))}
       </div>
+
+      {/* Matches Pagination */}
+      <PaginationControls
+        currentPage={matchesPagination.currentPage}
+        totalPages={matchesPagination.totalPages}
+        totalItems={matchesPagination.totalItems}
+        itemsPerPage={matchesPagination.itemsPerPage}
+        pageNumbers={matchesPagination.pageNumbers}
+        canGoToNext={matchesPagination.canGoToNext}
+        canGoToPrevious={matchesPagination.canGoToPrevious}
+        onPageChange={matchesPagination.goToPage}
+        onNextPage={matchesPagination.goToNextPage}
+        onPreviousPage={matchesPagination.goToPreviousPage}
+      />
         </TabsContent>
 
         <TabsContent value="players" className="space-y-6">
@@ -364,18 +396,34 @@ export const AdminPanel = () => {
 
           {/* Players List */}
           <div className="space-y-4">
-            {leaderboard.map((entry) => (
-              <PlayerEditCard
-                key={entry.player.id}
-                entry={entry}
-                isEditing={editingPlayer === entry.player.id}
-                onEdit={() => handleEditPlayer(entry.player.id)}
-                onSave={(updatedStats) => handleSavePlayer(entry.player.id, updatedStats)}
-                onCancel={() => setEditingPlayer(null)}
-                onDelete={() => handleDeletePlayer(entry.player.id)}
-              />
-            ))}
+            {leaderboard
+              .slice(playersPagination.startIndex, playersPagination.endIndex)
+              .map((entry) => (
+                <PlayerEditCard
+                  key={entry.player.id}
+                  entry={entry}
+                  isEditing={editingPlayer === entry.player.id}
+                  onEdit={() => handleEditPlayer(entry.player.id)}
+                  onSave={(updatedStats) => handleSavePlayer(entry.player.id, updatedStats)}
+                  onCancel={() => setEditingPlayer(null)}
+                  onDelete={() => handleDeletePlayer(entry.player.id)}
+                />
+              ))}
           </div>
+
+          {/* Players Pagination */}
+          <PaginationControls
+            currentPage={playersPagination.currentPage}
+            totalPages={playersPagination.totalPages}
+            totalItems={playersPagination.totalItems}
+            itemsPerPage={playersPagination.itemsPerPage}
+            pageNumbers={playersPagination.pageNumbers}
+            canGoToNext={playersPagination.canGoToNext}
+            canGoToPrevious={playersPagination.canGoToPrevious}
+            onPageChange={playersPagination.goToPage}
+            onNextPage={playersPagination.goToNextPage}
+            onPreviousPage={playersPagination.goToPreviousPage}
+          />
         </TabsContent>
       </Tabs>
     </div>
