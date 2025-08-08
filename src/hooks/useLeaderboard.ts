@@ -15,7 +15,11 @@ export const useLeaderboard = () => {
       const { data, error } = await supabase
         .from('player_stats')
         .select(`
-          *,
+          player_id,
+          points,
+          correct_predictions,
+          total_predictions,
+          rank_position,
           player:players(*)
         `)
         .order('rank_position', { ascending: true });
