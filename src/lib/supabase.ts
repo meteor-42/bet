@@ -85,7 +85,7 @@ export interface UpdatePlayerData {
 
 // Типы для аутентификации
 export interface LoginCredentials {
-  name: string;
+  email: string;
   password: string;
 }
 
@@ -98,4 +98,32 @@ export interface AuthUser {
   correct_predictions: number;
   total_predictions: number;
   rank_position: number;
+}
+
+// Типы для ставок
+export interface Bet {
+  id: string;
+  player_id: string;
+  match_id: string;
+  predicted_home_score: number;
+  predicted_away_score: number;
+  points_earned?: number | null;
+  is_calculated: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBetData {
+  player_id: string;
+  match_id: string;
+  predicted_home_score: number;
+  predicted_away_score: number;
+}
+
+export interface BetWithMatch extends Bet {
+  match: Match;
+}
+
+export interface BetWithPlayer extends Bet {
+  player: Player;
 }
