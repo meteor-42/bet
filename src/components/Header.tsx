@@ -1,11 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, User, Settings, LogOut, History } from "lucide-react";
+import { Trophy, User, Settings, LogOut, History, Shield } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MyBets } from "@/components/MyBets";
 import { AdminPanel } from "@/components/AdminPanel";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Header = () => {
+  const { user, logout, isAdmin } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <header className="border-b border-border bg-background">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -21,10 +28,21 @@ export const Header = () => {
 
         {/* User Info */}
         <div className="flex items-center space-x-6">
+          {/* User Name & Role */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">{user?.name}</span>
+            {isAdmin && (
+              <Badge variant="default" className="text-xs">
+                <Shield className="w-3 h-3 mr-1" />
+                Админ
+              </Badge>
+            )}
+          </div>
+
           {/* Points */}
           <div className="flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">Очки:</span>
-            <span className="font-medium text-foreground">1,234</span>
+            <span className="font-medium text-foreground">{user?.points.toLocaleString()}</span>
           </div>
 
           {/* User Menu */}
@@ -44,28 +62,37 @@ export const Header = () => {
                 </div>
               </SheetContent>
             </Sheet>
-            
+
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <User className="w-4 h-4" />
             </Button>
-            
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-full w-full max-w-none max-h-none">
-                <SheetHeader>
-                  <SheetTitle>Настройки</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  <AdminPanel />
-                </div>
-              </SheetContent>
-            </Sheet>
-            
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+
+            {/* Admin Panel - только для админов */}
+            {isAdmin && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-full w-full max-w-none max-h-none">
+                  <SheetHeader>
+                    <SheetTitle>Админ-панель</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <AdminPanel />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              onClick={handleLogout}
+              title="Выйти"
+            >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
