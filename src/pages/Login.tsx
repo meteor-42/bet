@@ -1,0 +1,136 @@
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, User, Lock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
+export const Login = () => {
+  const { login, isLoading, user } = useAuth();
+  const [credentials, setCredentials] = useState({
+    name: '',
+    password: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Если пользователь уже авторизован, перенаправляем на главную
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!credentials.name || !credentials.password) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    const success = await login(credentials);
+
+    if (success) {
+      // Перенаправление произойдет автоматически через Navigate выше
+    }
+
+    setIsSubmitting(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8 border border-border">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 bg-primary rounded-sm flex items-center justify-center mx-auto">
+              <div className="w-6 h-6 bg-primary-foreground rounded-sm"></div>
+            </div>
+            <h1 className="text-2xl font-medium text-foreground">Футбольные прогнозы</h1>
+            <p className="text-sm text-muted-foreground">
+              Войдите в систему для участия в прогнозах
+            </p>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Имя пользователя</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Введите имя пользователя"
+                  value={credentials.name}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, name: e.target.value }))}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Пароль</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Введите пароль"
+                  value={credentials.password}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || !credentials.name || !credentials.password}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Вход...
+                </>
+              ) : (
+                'Войти'
+              )}
+            </Button>
+          </form>
+
+          {/* Demo Accounts */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground text-center mb-3">
+              Демо-аккаунты для тестирования:
+            </p>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Администратор:</span>
+                <span>admin / admin123</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Игрок:</span>
+                <span>Alex Chen / password123</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
