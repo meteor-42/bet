@@ -4,13 +4,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const Login = () => {
   const { login, isLoading, user } = useAuth();
   const [credentials, setCredentials] = useState({
-    name: '',
+    email: '',
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +23,7 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!credentials.name || !credentials.password) {
+    if (!credentials.email || !credentials.password) {
       return;
     }
 
@@ -66,15 +66,15 @@ export const Login = () => {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Имя пользователя</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="name"
-                  type="text"
-                  placeholder="Введите имя пользователя"
-                  value={credentials.name}
-                  onChange={(e) => setCredentials(prev => ({ ...prev, name: e.target.value }))}
+                  id="email"
+                  type="email"
+                  placeholder="Введите email"
+                  value={credentials.email}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                   className="pl-10"
                   required
                 />
@@ -100,7 +100,7 @@ export const Login = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting || !credentials.name || !credentials.password}
+              disabled={isSubmitting || !credentials.email || !credentials.password}
             >
               {isSubmitting ? (
                 <>
@@ -121,11 +121,11 @@ export const Login = () => {
             <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Администратор:</span>
-                <span>admin / admin123</span>
+                <span>admin@rpl.com / admin123</span>
               </div>
               <div className="flex justify-between">
                 <span>Игрок:</span>
-                <span>Alex Chen / password123</span>
+                <span>alex.chen@example.com / password123</span>
               </div>
             </div>
           </div>
