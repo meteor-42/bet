@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AdminPanel = () => {
   const { matches, loading, createMatch, updateMatch, deleteMatch } = useMatches();
-  const { leaderboard, loading: leaderboardLoading, createPlayer, updatePlayerStats, deletePlayer } = useLeaderboard();
+  const { leaderboard, loading: leaderboardLoading, createPlayer, updatePlayer, deletePlayer } = useLeaderboard();
 
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
@@ -31,7 +31,11 @@ export const AdminPanel = () => {
   const [newPlayer, setNewPlayer] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
+    role: "player" as "admin" | "player",
+    points: 0,
+    correct_predictions: 0,
+    total_predictions: 0
   });
 
   const handleEditMatch = (matchId: string) => {
@@ -73,8 +77,8 @@ export const AdminPanel = () => {
     setEditingPlayer(playerId);
   };
 
-  const handleSavePlayer = async (playerId: string, updatedStats: any) => {
-    const success = await updatePlayerStats({ player_id: playerId, ...updatedStats });
+  const handleSavePlayer = async (playerId: string, updatedData: any) => {
+    const success = await updatePlayer({ id: playerId, ...updatedData });
     if (success) {
       setEditingPlayer(null);
     }
@@ -91,7 +95,14 @@ export const AdminPanel = () => {
 
     const success = await createPlayer(newPlayer);
     if (success) {
-      setNewPlayer({ name: "", email: "", password: "" });
+      setNewPlayer({
+        name: "",
+        email: "",
+        password: "",
+        points: 0,
+        correct_predictions: 0,
+        total_predictions: 0
+      });
       setShowAddPlayerForm(false);
     }
   };
@@ -127,7 +138,7 @@ export const AdminPanel = () => {
           <p className="text-muted-foreground">Загрузка данных...</p>
         </div>
       )}
-      
+
       <div>
         <h2 className="text-xl font-medium text-foreground">Админ-панель</h2>
         <p className="text-sm text-muted-foreground">Управление матчами и игроками</p>
@@ -161,7 +172,7 @@ export const AdminPanel = () => {
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="homeTeam">Домашняя команда *</Label>
@@ -231,7 +242,7 @@ export const AdminPanel = () => {
                 </Select>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <Button onClick={handleAddMatch}>Создать матч</Button>
               <Button variant="outline" onClick={() => setShowAddForm(false)}>Отмена</Button>
@@ -280,7 +291,7 @@ export const AdminPanel = () => {
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="playerName">Имя игрока *</Label>
@@ -311,8 +322,38 @@ export const AdminPanel = () => {
                       placeholder="Пароль игрока"
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="playerPoints">Очки</Label>
+                    <Input
+                      id="playerPoints"
+                      type="number"
+                      value={newPlayer.points}
+                      onChange={(e) => setNewPlayer(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="playerCorrect">Верные прогнозы</Label>
+                    <Input
+                      id="playerCorrect"
+                      type="number"
+                      value={newPlayer.correct_predictions}
+                      onChange={(e) => setNewPlayer(prev => ({ ...prev, correct_predictions: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="playerTotal">Всего прогнозов</Label>
+                    <Input
+                      id="playerTotal"
+                      type="number"
+                      value={newPlayer.total_predictions}
+                      onChange={(e) => setNewPlayer(prev => ({ ...prev, total_predictions: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Button onClick={handleAddPlayer}>Создать игрока</Button>
                   <Button variant="outline" onClick={() => setShowAddPlayerForm(false)}>Отмена</Button>
@@ -352,15 +393,15 @@ interface MatchEditCardProps {
   getStatusText: (status: string) => string;
 }
 
-const MatchEditCard = ({ 
-  match, 
-  isEditing, 
-  onEdit, 
-  onSave, 
-  onCancel, 
+const MatchEditCard = ({
+  match,
+  isEditing,
+  onEdit,
+  onSave,
+  onCancel,
   onDelete,
   getStatusBadgeVariant,
-  getStatusText 
+  getStatusText
 }: MatchEditCardProps) => {
   const [editData, setEditData] = useState<Partial<Match>>(match);
 
@@ -384,7 +425,7 @@ const MatchEditCard = ({
               </Button>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Домашняя команда</Label>
@@ -465,7 +506,7 @@ const MatchEditCard = ({
             <span>{match.stage}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Edit2 className="w-4 h-4" />
@@ -488,22 +529,30 @@ interface PlayerEditCardProps {
   onDelete: () => void;
 }
 
-const PlayerEditCard = ({ 
-  entry, 
-  isEditing, 
-  onEdit, 
-  onSave, 
-  onCancel, 
-  onDelete 
+const PlayerEditCard = ({
+  entry,
+  isEditing,
+  onEdit,
+  onSave,
+  onCancel,
+  onDelete
 }: PlayerEditCardProps) => {
   const [editData, setEditData] = useState({
-    points: entry.stats.points,
-    correct_predictions: entry.stats.correct_predictions,
-    total_predictions: entry.stats.total_predictions
+    name: entry.player.name,
+    email: entry.player.email || "",
+    password: "",
+    points: entry.player.points,
+    correct_predictions: entry.player.correct_predictions,
+    total_predictions: entry.player.total_predictions
   });
 
   const handleSave = () => {
-    onSave(editData);
+    // Исключаем пустой пароль из обновления
+    const dataToSave = { ...editData };
+    if (!dataToSave.password) {
+      delete dataToSave.password;
+    }
+    onSave(dataToSave);
   };
 
   if (isEditing) {
@@ -522,8 +571,32 @@ const PlayerEditCard = ({
               </Button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Имя игрока</Label>
+              <Input
+                value={editData.name}
+                onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={editData.email}
+                onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Новый пароль (оставьте пустым, чтобы не менять)</Label>
+              <Input
+                type="password"
+                value={editData.password}
+                onChange={(e) => setEditData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Оставьте пустым для сохранения текущего"
+              />
+            </div>
             <div>
               <Label>Очки</Label>
               <Input
@@ -560,18 +633,19 @@ const PlayerEditCard = ({
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-medium text-foreground">
-              #{entry.stats.rank_position} {entry.player.name}
+              #{entry.player.rank_position} {entry.player.name}
             </h3>
             <Badge variant="secondary">
-              {entry.stats.points} очков
+              {entry.player.points} очков
             </Badge>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{entry.stats.correct_predictions}/{entry.stats.total_predictions} верных</span>
+            <span>{entry.player.correct_predictions}/{entry.player.total_predictions} верных</span>
             <span>{entry.accuracy}% точность</span>
+            <span>{entry.player.email}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Edit2 className="w-4 h-4" />
