@@ -19,12 +19,6 @@ export const MatchCard = ({ match }: MatchCardProps) => {
   const [homeScore, setHomeScore] = useState([existingBet?.predicted_home_score || 1]);
   const [awayScore, setAwayScore] = useState([existingBet?.predicted_away_score || 0]);
   const [isSaving, setIsSaving] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  } | null>(null);
 
   // Обновляем значения слайдеров при изменении существующей ставки
   useEffect(() => {
@@ -46,40 +40,6 @@ export const MatchCard = ({ match }: MatchCardProps) => {
     });
     setIsSaving(false);
   };
-
-  useEffect(() => {
-    if (match.status !== "upcoming") return;
-
-    const calculateTimeLeft = () => {
-      // Создаем дату матча из match_date и match_time
-      const [day, month] = match.match_date.split('.');
-      const [hours, minutes] = match.match_time.split(':');
-
-      const matchDate = new Date();
-      matchDate.setDate(parseInt(day));
-      matchDate.setMonth(parseInt(month) - 1);
-      matchDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-      const now = new Date();
-      const difference = matchDate.getTime() - now.getTime();
-
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((difference / 1000 / 60) % 60);
-        const seconds = Math.floor((difference / 1000) % 60);
-
-        setTimeLeft({ days, hours, minutes, seconds });
-      } else {
-        setTimeLeft(null);
-      }
-    };
-
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-
-    return () => clearInterval(timer);
-  }, [match.status, match.match_date, match.match_time]);
 
   const getStatusText = (status: string) => {
     switch (status) {
