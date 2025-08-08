@@ -58,16 +58,16 @@ export const Leaderboard = () => {
             >
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 w-12">
-                  {getRankIcon(entry.stats.rank_position)}
-                  <span className={`text-lg ${getRankStyle(entry.stats.rank_position)}`}>
-                    #{entry.stats.rank_position}
+                  {getRankIcon(entry.player.rank_position)}
+                  <span className={`text-lg ${getRankStyle(entry.player.rank_position)}`}>
+                    #{entry.player.rank_position}
                   </span>
                 </div>
-                
+
                 <div>
                   <h3 className="font-medium text-foreground">{entry.player.name}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {entry.stats.correct_predictions}/{entry.stats.total_predictions} верных • {entry.accuracy}% точность
+                    {entry.player.correct_predictions}/{entry.player.total_predictions} верных • {entry.accuracy}% точность
                   </p>
                 </div>
               </div>
@@ -75,7 +75,7 @@ export const Leaderboard = () => {
               <div className="flex items-center space-x-4">
                 <div className="text-right">
                   <div className="font-medium text-foreground">
-                    {entry.stats.points.toLocaleString()}
+                    {entry.player.points.toLocaleString()}
                   </div>
                   <div className="text-xs text-muted-foreground">очков</div>
                 </div>
