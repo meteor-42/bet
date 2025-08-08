@@ -454,7 +454,13 @@ const MatchEditCard = ({
   const [editData, setEditData] = useState<Partial<Match>>(match);
 
   const handleSave = () => {
-    onSave(editData);
+    // Очищаем данные перед отправкой
+    const cleanedData = {
+      ...editData,
+      home_score: editData.home_score === null || editData.home_score === undefined ? null : Number(editData.home_score),
+      away_score: editData.away_score === null || editData.away_score === undefined ? null : Number(editData.away_score)
+    };
+    onSave(cleanedData);
   };
 
   if (isEditing) {
@@ -474,49 +480,54 @@ const MatchEditCard = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Домашняя команда</Label>
-              <Input
-                value={editData.home_team || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, home_team: e.target.value }))}
-              />
+          <div className="space-y-4">
+            {/* Основная информация о матче */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Домашняя команда</Label>
+                <Input
+                  value={editData.home_team || ""}
+                  onChange={(e) => setEditData(prev => ({ ...prev, home_team: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Гостевая команда</Label>
+                <Input
+                  value={editData.away_team || ""}
+                  onChange={(e) => setEditData(prev => ({ ...prev, away_team: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Дата</Label>
+                <Input
+                  value={editData.match_date || ""}
+                  onChange={(e) => setEditData(prev => ({ ...prev, match_date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Время</Label>
+                <Input
+                  value={editData.match_time || ""}
+                  onChange={(e) => setEditData(prev => ({ ...prev, match_time: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Лига</Label>
+                <Input
+                  value={editData.league || ""}
+                  onChange={(e) => setEditData(prev => ({ ...prev, league: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Этап</Label>
+                <Input
+                  value={editData.stage || ""}
+                  onChange={(e) => setEditData(prev => ({ ...prev, stage: e.target.value }))}
+                />
+              </div>
             </div>
-            <div>
-              <Label>Гостевая команда</Label>
-              <Input
-                value={editData.away_team || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, away_team: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Дата</Label>
-              <Input
-                value={editData.match_date || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, match_date: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Время</Label>
-              <Input
-                value={editData.match_time || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, match_time: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Лига</Label>
-              <Input
-                value={editData.league || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, league: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Этап</Label>
-              <Input
-                value={editData.stage || ""}
-                onChange={(e) => setEditData(prev => ({ ...prev, stage: e.target.value }))}
-              />
-            </div>
+
+            {/* Статус на всю ширину */}
             <div>
               <Label>Статус</Label>
               <Select value={editData.status} onValueChange={(value) => setEditData(prev => ({ ...prev, status: value as any }))}>
@@ -530,31 +541,35 @@ const MatchEditCard = ({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Голы домашней команды</Label>
-              <Input
-                type="number"
-                min="0"
-                value={editData.home_score || ""}
-                onChange={(e) => setEditData(prev => ({
-                  ...prev,
-                  home_score: e.target.value ? parseInt(e.target.value) : null
-                }))}
-                placeholder="Не установлено"
-              />
-            </div>
-            <div>
-              <Label>Голы гостевой команды</Label>
-              <Input
-                type="number"
-                min="0"
-                value={editData.away_score || ""}
-                onChange={(e) => setEditData(prev => ({
-                  ...prev,
-                  away_score: e.target.value ? parseInt(e.target.value) : null
-                }))}
-                placeholder="Не установлено"
-              />
+
+            {/* Счет на одной строке */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Голы домашней команды</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editData.home_score !== null && editData.home_score !== undefined ? editData.home_score.toString() : ""}
+                  onChange={(e) => setEditData(prev => ({
+                    ...prev,
+                    home_score: e.target.value === "" ? null : parseInt(e.target.value) || 0
+                  }))}
+                  placeholder="Не установлено"
+                />
+              </div>
+              <div>
+                <Label>Голы гостевой команды</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editData.away_score !== null && editData.away_score !== undefined ? editData.away_score.toString() : ""}
+                  onChange={(e) => setEditData(prev => ({
+                    ...prev,
+                    away_score: e.target.value === "" ? null : parseInt(e.target.value) || 0
+                  }))}
+                  placeholder="Не установлено"
+                />
+              </div>
             </div>
           </div>
         </div>
