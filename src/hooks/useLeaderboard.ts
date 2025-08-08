@@ -207,6 +207,3 @@ export const useLeaderboard = () => {
     refetch: fetchLeaderboard
   };
 };
-    }
-  }
-}
