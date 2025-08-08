@@ -16,12 +16,10 @@ pnpm i
 pnpm run dev
 ```
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📝 Project Summary ✅
+- React + TypeScript + Vite ✅
+- shadcn/ui components ✅
+- Supabase for backend/database ✅
+- Tailwind CSS for styling ✅
+- React Router for navigation ✅
+- React Query for data fetching ✅
