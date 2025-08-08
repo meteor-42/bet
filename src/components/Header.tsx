@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, User, Settings, LogOut, History, Shield } from "lucide-react";
+import { User, Settings, LogOut, History, Shield } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MyBets } from "@/components/MyBets";
 import { AdminPanel } from "@/components/AdminPanel";
@@ -37,12 +37,6 @@ export const Header = () => {
                 Админ
               </Badge>
             )}
-          </div>
-
-          {/* Points */}
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">Очки:</span>
-            <span className="font-medium text-foreground">{user?.points.toLocaleString()}</span>
           </div>
 
           {/* User Menu */}
