@@ -42,10 +42,6 @@ export const useBets = (playerId?: string) => {
     }
   }, [playerId, toast]);
 
-  useEffect(() => {
-    fetchBets();
-  }, [fetchBets]);
-
   // Получить ставку для конкретного матча
   const getBetForMatch = useCallback((matchId: string) => {
     return bets.find(bet => bet.match_id === matchId);
@@ -109,6 +105,10 @@ export const useBets = (playerId?: string) => {
       return false;
     }
   }, [playerId, getBetForMatch, fetchBets, toast]);
+
+  useEffect(() => {
+    fetchBets();
+  }, [fetchBets]);
 
   return {
     bets,
