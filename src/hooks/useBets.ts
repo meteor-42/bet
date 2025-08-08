@@ -57,7 +57,7 @@ export const useBets = (playerId?: string) => {
   }, [bets]);
 
   // Создать или обновить ставку
-  const upsertBet = useCallback(async (betData: any) => {
+  const upsertBet = useCallback(async (betData: Omit<CreateBetData, 'player_id'>) => {
     if (!playerId) return false;
 
     try {
