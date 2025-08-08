@@ -54,14 +54,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data, error } = await supabase
         .from('players')
         .select('*')
-        .eq('name', credentials.name)
+        .eq('email', credentials.email)
         .eq('password', credentials.password)
         .single();
 
       if (error || !data) {
         toast({
           title: "Ошибка входа",
-          description: "Неверное имя пользователя или пароль",
+          description: "Неверный email или пароль",
           variant: "destructive"
         });
         return false;
