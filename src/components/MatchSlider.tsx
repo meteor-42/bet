@@ -2,17 +2,7 @@ import { useState } from "react";
 import { MatchCard } from "./MatchCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Match {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  date: string;
-  time: string;
-  league: string;
-  stage: string;
-  status: "upcoming" | "live" | "finished";
-}
+import type { Match } from "@/lib/supabase";
 
 interface MatchSliderProps {
   matches: Match[];
@@ -38,7 +28,7 @@ export const MatchSlider = ({ matches }: MatchSliderProps) => {
       {/* Match Display */}
       <div className="relative">
         <div className="overflow-hidden">
-          <div 
+          <div
             className="flex transition-transform duration-300 ease-out"
             style={{ transform: `translateX(-${currentIndex * 100}%)` }}
           >
@@ -81,8 +71,8 @@ export const MatchSlider = ({ matches }: MatchSliderProps) => {
               key={index}
               onClick={() => goToMatch(index)}
               className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex 
-                  ? "bg-foreground scale-125" 
+                index === currentIndex
+                  ? "bg-foreground scale-125"
                   : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
               }`}
             />
