@@ -1,58 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, type BetWithMatch } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-
-export const useBets = (playerId?: string) => {
-  const [bets, setBets] = useState<BetWithMatch[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  // Загрузка ставок пользователя
-  const fetchBets = useCallback(async () => {
-    if (!playerId) {
-      setBets([]);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('bets')
-        .select(`
-          *,
-          match:matches(*)
-        `)
-        .eq('player_id', playerId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBets(data || []);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки ставок';
-      setError(errorMessage);
-      toast({
-        title: "Ошибка",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [playerId, toast]);
-
-  useEffect(() => {
-    fetchBets();
-  }, [fetchBets]);
-
-  return {
-    bets,
-    isLoading,
-    error,
-    refetch: fetchBets
-  };
-}; → import { useState, useEffect, useCallback } from 'react';
 import { supabase, type BetWithMatch, type CreateBetData } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -96,6 +42,10 @@ export const useBets = (playerId?: string) => {
     }
   }, [playerId, toast]);
 
+  useEffect(() => {
+    fetchBets();
+  }, [fetchBets]);
+
   // Получить ставку для конкретного матча
   const getBetForMatch = useCallback((matchId: string) => {
     return bets.find(bet => bet.match_id === matchId);
@@ -107,12 +57,12 @@ export const useBets = (playerId?: string) => {
   }, [bets]);
 
   // Создать или обновить ставку
-  const upsertBet = useCallback(async (betData: Omit<CreateBetData, 'player_id'>) => {
+  const upsertBet = useCallback(async (betData: any) => {
     if (!playerId) return false;
 
     try {
       const existingBet = getBetForMatch(betData.match_id);
-      
+
       if (existingBet) {
         // Обновляем существующую ставку
         const { error } = await supabase
@@ -125,7 +75,7 @@ export const useBets = (playerId?: string) => {
           .eq('id', existingBet.id);
 
         if (error) throw error;
-        
+
         toast({
           title: "Ставка обновлена",
           description: "Ваш прогноз успешно обновлен"
@@ -140,7 +90,7 @@ export const useBets = (playerId?: string) => {
           }]);
 
         if (error) throw error;
-        
+
         toast({
           title: "Ставка сохранена",
           description: "Ваш прогноз успешно сохранен"
@@ -159,10 +109,6 @@ export const useBets = (playerId?: string) => {
       return false;
     }
   }, [playerId, getBetForMatch, fetchBets, toast]);
-
-  useEffect(() => {
-    fetchBets();
-  }, [fetchBets]);
 
   return {
     bets,
