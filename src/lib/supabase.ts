@@ -46,7 +46,7 @@ export interface Player {
   id: string;
   name: string;
   email?: string | null;
-  avatar_url?: string | null;
+  password: string;
   created_at: string;
   updated_at: string;
 }
@@ -57,8 +57,6 @@ export interface PlayerStats {
   points: number;
   correct_predictions: number;
   total_predictions: number;
-  current_streak: number;
-  best_streak: number;
   rank_position: number;
   updated_at: string;
 }
@@ -72,7 +70,7 @@ export interface LeaderboardEntry {
 export interface CreatePlayerData {
   name: string;
   email?: string;
-  avatar_url?: string;
+  password: string;
 }
 
 export interface UpdatePlayerStatsData {
@@ -80,6 +78,4 @@ export interface UpdatePlayerStatsData {
   points?: number;
   correct_predictions?: number;
   total_predictions?: number;
-  current_streak?: number;
-  best_streak?: number;
 }

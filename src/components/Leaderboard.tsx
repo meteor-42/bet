@@ -79,13 +79,6 @@ export const Leaderboard = () => {
                   </div>
                   <div className="text-xs text-muted-foreground">очков</div>
                 </div>
-                
-                {entry.stats.current_streak > 0 && (
-                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                    <Target size={12} className="text-muted-foreground" />
-                    {entry.stats.current_streak}
-                  </Badge>
-                )}
               </div>
             </div>
           ))}

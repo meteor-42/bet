@@ -31,7 +31,7 @@ export const AdminPanel = () => {
   const [newPlayer, setNewPlayer] = useState({
     name: "",
     email: "",
-    avatar_url: ""
+    password: ""
   });
 
   const handleEditMatch = (matchId: string) => {
@@ -85,13 +85,13 @@ export const AdminPanel = () => {
   };
 
   const handleAddPlayer = async () => {
-    if (!newPlayer.name) {
+    if (!newPlayer.name || !newPlayer.password) {
       return;
     }
 
     const success = await createPlayer(newPlayer);
     if (success) {
-      setNewPlayer({ name: "", email: "", avatar_url: "" });
+      setNewPlayer({ name: "", email: "", password: "" });
       setShowAddPlayerForm(false);
     }
   };
@@ -301,6 +301,16 @@ export const AdminPanel = () => {
                       placeholder="email@example.com"
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="playerPassword">Пароль *</Label>
+                    <Input
+                      id="playerPassword"
+                      type="password"
+                      value={newPlayer.password}
+                      onChange={(e) => setNewPlayer(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Пароль игрока"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex gap-2">
@@ -489,9 +499,7 @@ const PlayerEditCard = ({
   const [editData, setEditData] = useState({
     points: entry.stats.points,
     correct_predictions: entry.stats.correct_predictions,
-    total_predictions: entry.stats.total_predictions,
-    current_streak: entry.stats.current_streak,
-    best_streak: entry.stats.best_streak
+    total_predictions: entry.stats.total_predictions
   });
 
   const handleSave = () => {
@@ -540,22 +548,6 @@ const PlayerEditCard = ({
                 onChange={(e) => setEditData(prev => ({ ...prev, total_predictions: parseInt(e.target.value) || 0 }))}
               />
             </div>
-            <div>
-              <Label>Текущая серия</Label>
-              <Input
-                type="number"
-                value={editData.current_streak}
-                onChange={(e) => setEditData(prev => ({ ...prev, current_streak: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
-            <div>
-              <Label>Лучшая серия</Label>
-              <Input
-                type="number"
-                value={editData.best_streak}
-                onChange={(e) => setEditData(prev => ({ ...prev, best_streak: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
           </div>
         </div>
       </Card>
@@ -577,7 +569,6 @@ const PlayerEditCard = ({
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>{entry.stats.correct_predictions}/{entry.stats.total_predictions} верных</span>
             <span>{entry.accuracy}% точность</span>
-            <span>Серия: {entry.stats.current_streak}</span>
           </div>
         </div>
         

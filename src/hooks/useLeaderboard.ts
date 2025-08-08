@@ -30,8 +30,6 @@ export const useLeaderboard = () => {
           points: item.points,
           correct_predictions: item.correct_predictions,
           total_predictions: item.total_predictions,
-          current_streak: item.current_streak,
-          best_streak: item.best_streak,
           rank_position: item.rank_position,
           updated_at: item.updated_at
         },
@@ -178,8 +176,6 @@ export const useLeaderboard = () => {
           points: data.points,
           correct_predictions: data.correct_predictions,
           total_predictions: data.total_predictions,
-          current_streak: data.current_streak,
-          best_streak: data.best_streak,
           rank_position: data.rank_position,
           updated_at: data.updated_at
         },
