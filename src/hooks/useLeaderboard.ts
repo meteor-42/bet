@@ -17,7 +17,7 @@ export const useLeaderboard = () => {
         .select(`
           *,
           player:players(*)
-        .select('player_id, points, correct_predictions, total_predictions, rank_position')
+        `)
         .order('rank_position', { ascending: true });
 
       if (error) throw error;
@@ -162,7 +162,6 @@ export const useLeaderboard = () => {
         .select(`
           *,
           player:players(*)
-        )
         `)
         .eq('player_id', playerId)
         .single();
