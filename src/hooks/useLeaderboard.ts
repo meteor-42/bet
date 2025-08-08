@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, type Player, type PlayerStats, type LeaderboardEntry, type CreatePlayerData, type UpdatePlayerStatsData } from '@/lib/supabase';
+import { supabase, type Player, type LeaderboardEntry, type CreatePlayerData, type UpdatePlayerData } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 export const useLeaderboard = () => {
@@ -13,31 +13,15 @@ export const useLeaderboard = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('player_stats')
-        .select(`
-          player_id,
-          points,
-          correct_predictions,
-          total_predictions,
-          rank_position,
-          player:players(*)
-        `)
+        .from('players')
+        .select('*')
         .order('rank_position', { ascending: true });
 
       if (error) throw error;
 
-      const formattedData: LeaderboardEntry[] = (data || []).map(item => ({
-        player: item.player,
-        stats: {
-          id: item.id,
-          player_id: item.player_id,
-          points: item.points,
-          correct_predictions: item.correct_predictions,
-          total_predictions: item.total_predictions,
-          rank_position: item.rank_position,
-          updated_at: item.updated_at
-        },
-        accuracy: item.total_predictions > 0 ? Math.round((item.correct_predictions / item.total_predictions) * 100) : 0
+      const formattedData: LeaderboardEntry[] = (data || []).map(player => ({
+        player,
+        accuracy: player.total_predictions > 0 ? Math.round((player.correct_predictions / player.total_predictions) * 100) : 0
       }));
 
       setLeaderboard(formattedData);
@@ -57,26 +41,27 @@ export const useLeaderboard = () => {
   // Создание нового игрока
   const createPlayer = async (playerData: CreatePlayerData): Promise<Player | null> => {
     try {
+      // Создаем игрока с полными данными включая статистику
+      const newPlayer = {
+        name: playerData.name,
+        email: playerData.email || null,
+        password: playerData.password,
+        points: playerData.points || 0,
+        correct_predictions: playerData.correct_predictions || 0,
+        total_predictions: playerData.total_predictions || 0,
+        rank_position: playerData.rank_position || 0
+      };
+
       const { data, error } = await supabase
         .from('players')
-        .insert([playerData])
+        .insert([newPlayer])
         .select()
         .single();
 
       if (error) throw error;
 
-      // Создаем начальную статистику для игрока
-      await supabase
-        .from('player_stats')
-        .insert([{
-          player_id: data.id,
-          points: 0,
-          correct_predictions: 0,
-          total_predictions: 0,
-          current_streak: 0,
-          best_streak: 0,
-          rank_position: 0
-        }]);
+      // Пересчитываем рейтинг после создания
+      await supabase.rpc('recalculate_rankings');
 
       toast({
         title: "Игрок создан",
@@ -96,28 +81,32 @@ export const useLeaderboard = () => {
     }
   };
 
-  // Обновление статистики игрока
-  const updatePlayerStats = async (statsData: UpdatePlayerStatsData): Promise<boolean> => {
+  // Обновление данных игрока (все поля)
+  const updatePlayer = async (playerData: UpdatePlayerData): Promise<boolean> => {
     try {
+      const { id, ...updateData } = playerData;
+
       const { error } = await supabase
-        .from('player_stats')
-        .update(statsData)
-        .eq('player_id', statsData.player_id);
+        .from('players')
+        .update(updateData)
+        .eq('id', id);
 
       if (error) throw error;
 
-      // Пересчитываем рейтинг
-      await supabase.rpc('recalculate_rankings');
+      // Пересчитываем рейтинг если обновлялись очки или статистика
+      if ('points' in updateData || 'correct_predictions' in updateData) {
+        await supabase.rpc('recalculate_rankings');
+      }
 
       toast({
-        title: "Статистика обновлена",
+        title: "Игрок обновлен",
         description: "Данные игрока успешно обновлены"
       });
 
       await fetchLeaderboard();
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка обновления статистики';
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка обновления игрока';
       toast({
         title: "Ошибка",
         description: errorMessage,
@@ -158,35 +147,23 @@ export const useLeaderboard = () => {
     }
   };
 
-  // Получение статистики конкретного игрока
-  const getPlayerStats = async (playerId: string): Promise<LeaderboardEntry | null> => {
+  // Получение данных конкретного игрока
+  const getPlayer = async (playerId: string): Promise<LeaderboardEntry | null> => {
     try {
       const { data, error } = await supabase
-        .from('player_stats')
-        .select(`
-          *,
-          player:players(*)
-        `)
-        .eq('player_id', playerId)
+        .from('players')
+        .select('*')
+        .eq('id', playerId)
         .single();
 
       if (error) throw error;
 
       return {
-        player: data.player,
-        stats: {
-          id: data.id,
-          player_id: data.player_id,
-          points: data.points,
-          correct_predictions: data.correct_predictions,
-          total_predictions: data.total_predictions,
-          rank_position: data.rank_position,
-          updated_at: data.updated_at
-        },
+        player: data,
         accuracy: data.total_predictions > 0 ? Math.round((data.correct_predictions / data.total_predictions) * 100) : 0
       };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка получения статистики игрока';
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка получения данных игрока';
       toast({
         title: "Ошибка",
         description: errorMessage,
@@ -205,9 +182,9 @@ export const useLeaderboard = () => {
     loading,
     error,
     createPlayer,
-    updatePlayerStats,
+    updatePlayer,
     deletePlayer,
-    getPlayerStats,
+    getPlayer,
     refetch: fetchLeaderboard
   };
 };
