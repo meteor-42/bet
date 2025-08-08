@@ -530,6 +530,32 @@ const MatchEditCard = ({
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Голы домашней команды</Label>
+              <Input
+                type="number"
+                min="0"
+                value={editData.home_score || ""}
+                onChange={(e) => setEditData(prev => ({
+                  ...prev,
+                  home_score: e.target.value ? parseInt(e.target.value) : null
+                }))}
+                placeholder="Не установлено"
+              />
+            </div>
+            <div>
+              <Label>Голы гостевой команды</Label>
+              <Input
+                type="number"
+                min="0"
+                value={editData.away_score || ""}
+                onChange={(e) => setEditData(prev => ({
+                  ...prev,
+                  away_score: e.target.value ? parseInt(e.target.value) : null
+                }))}
+                placeholder="Не установлено"
+              />
+            </div>
           </div>
         </div>
       </Card>
@@ -548,6 +574,11 @@ const MatchEditCard = ({
               {getStatusText(match.status)}
             </Badge>
           </div>
+          {match.home_score !== null && match.away_score !== null && (
+            <div className="text-xl font-bold text-primary">
+              {match.home_score} - {match.away_score}
+            </div>
+          )}
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>{match.match_date} • {match.match_time}</span>
             <span>{match.league}</span>
