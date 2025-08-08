@@ -1,10 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useBets } from "@/hooks/useBets";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -12,87 +14,59 @@ import {
 } from "@/components/ui/pagination";
 
 export const MyBets = () => {
+  const { user } = useAuth();
+  const { bets, isLoading } = useBets(user?.id);
   const [currentPage, setCurrentPage] = useState(1);
-  const betsPerPage = 3;
-  
-  const mockBets = [
-    {
-      id: "1",
-      match: "Manchester City vs Liverpool",
-      date: "15 дек",
-      time: "21:00 МСК",
-      league: "Premier League",
-      prediction: "2-1",
-      actualScore: "2-1",
-      points: 3,
-      status: "won"
-    },
-    {
-      id: "2",
-      match: "Barcelona vs Real Madrid",
-      date: "16 дек",
-      time: "00:00 МСК",
-      league: "La Liga",
-      prediction: "1-0",
-      actualScore: "0-1",
-      points: 1,
-      status: "partial"
-    },
-    {
-      id: "3",
-      match: "PSG vs Marseille",
-      date: "14 дек",
-      time: "23:00 МСК",
-      league: "Ligue 1",
-      prediction: "3-0",
-      actualScore: "1-2",
-      points: 0,
-      status: "lost"
-    },
-    {
-      id: "4",
-      match: "Bayern Munich vs Bochum",
-      date: "17 дек",
-      time: "19:30 МСК",
-      league: "Bundesliga",
-      prediction: "2-0",
-      actualScore: "2-0",
-      points: 3,
-      status: "won"
-    },
-    {
-      id: "5",
-      match: "Arsenal vs Chelsea",
-      date: "18 дек",
-      time: "22:00 МСК",
-      league: "Premier League",
-      prediction: "1-1",
-      actualScore: "1-1",
-      points: 3,
-      status: "won"
-    },
-    {
-      id: "6",
-      match: "Inter vs Milan",
-      date: "19 дек",
-      time: "20:45 МСК",
-      league: "Serie A",
-      prediction: "0-2",
-      actualScore: "1-0",
-      points: 0,
-      status: "lost"
-    }
-  ];
+  const betsPerPage = 5;
 
-  const totalPoints = mockBets.reduce((sum, bet) => sum + bet.points, 0);
-  const totalPages = Math.ceil(mockBets.length / betsPerPage);
+  const totalPoints = bets
+    .filter(bet => bet.is_calculated)
+    .reduce((sum, bet) => sum + (bet.points_earned || 0), 0);
+
+  const totalPages = Math.ceil(bets.length / betsPerPage);
   const startIndex = (currentPage - 1) * betsPerPage;
-  const currentBets = mockBets.slice(startIndex, startIndex + betsPerPage);
+  const currentBets = bets.slice(startIndex, startIndex + betsPerPage);
+
+  const getStatusText = (bet: typeof bets[0]) => {
+    if (!bet.is_calculated) return "Ожидание";
+    if ((bet.points_earned || 0) === 3) return "Точный счет";
+    if ((bet.points_earned || 0) === 1) return "Исход";
+    return "Промах";
+  };
+
+  const getStatusVariant = (bet: typeof bets[0]) => {
+    if (!bet.is_calculated) return "secondary";
+    if ((bet.points_earned || 0) > 0) return "default";
+    return "outline";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span className="ml-2 text-muted-foreground">Загрузка ставок...</span>
+      </div>
+    );
+  }
+
+  if (bets.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">У вас пока нет ставок</p>
+        <p className="text-sm text-muted-foreground mt-2">Сделайте ставку на предстоящий матч!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="text-center pb-4 border-b border-border">
-        <p className="text-lg text-muted-foreground">Всего очков: <span className="font-medium text-foreground">{totalPoints}</span></p>
+        <p className="text-lg text-muted-foreground">
+          Всего очков из ставок: <span className="font-medium text-foreground">{totalPoints}</span>
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Всего ставок: {bets.length} • Рассчитано: {bets.filter(b => b.is_calculated).length}
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -102,22 +76,25 @@ export const MyBets = () => {
               {/* Header with date/time and points badge */}
               <div className="flex items-start justify-between">
                 <div className="text-sm text-muted-foreground font-medium">
-                  {bet.date} • {bet.time}
+                  {bet.match.match_date} • {bet.match.match_time}
                 </div>
                 <Badge
-                  variant={bet.status === "won" ? "default" : bet.status === "partial" ? "secondary" : "outline"}
+                  variant={getStatusVariant(bet)}
                   className="text-sm px-3 py-1"
                 >
-                  {bet.points > 0 && "+"}{bet.points}
+                  {bet.is_calculated
+                    ? `${(bet.points_earned || 0) > 0 ? "+" : ""}${bet.points_earned || 0} очков`
+                    : getStatusText(bet)
+                  }
                 </Badge>
               </div>
 
-              {/* Team names */}
+              {/* Team names and league */}
               <div className="text-center">
                 <h3 className="font-semibold text-foreground text-lg mb-1">
-                  {bet.match}
+                  {bet.match.home_team} vs {bet.match.away_team}
                 </h3>
-                <p className="text-sm text-muted-foreground">{bet.league}</p>
+                <p className="text-sm text-muted-foreground">{bet.match.league} • {bet.match.stage}</p>
               </div>
 
               {/* Prediction vs Result */}
@@ -127,7 +104,7 @@ export const MyBets = () => {
                     Мой прогноз
                   </div>
                   <div className="text-2xl font-bold text-foreground bg-muted/50 rounded-lg px-4 py-2 min-w-[80px]">
-                    {bet.prediction}
+                    {bet.predicted_home_score}-{bet.predicted_away_score}
                   </div>
                 </div>
 
@@ -140,9 +117,23 @@ export const MyBets = () => {
                     Результат
                   </div>
                   <div className="text-2xl font-bold text-foreground bg-muted rounded-lg px-4 py-2 min-w-[80px]">
-                    {bet.actualScore}
+                    {bet.match.status === 'finished' && bet.match.home_score !== null && bet.match.away_score !== null
+                      ? `${bet.match.home_score}-${bet.match.away_score}`
+                      : "—"
+                    }
                   </div>
                 </div>
+              </div>
+
+              {/* Match status */}
+              <div className="text-center">
+                <Badge variant={
+                  bet.match.status === 'finished' ? 'default' :
+                  bet.match.status === 'live' ? 'destructive' : 'secondary'
+                }>
+                  {bet.match.status === 'finished' ? 'Завершен' :
+                   bet.match.status === 'live' ? 'Идет' : 'Ожидается'}
+                </Badge>
               </div>
             </div>
           </Card>
@@ -150,46 +141,48 @@ export const MyBets = () => {
       </div>
 
       {/* Pagination */}
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                if (currentPage > 1) setCurrentPage(currentPage - 1);
-              }}
-              className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
-          
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <PaginationItem key={page}>
-              <PaginationLink
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  setCurrentPage(page);
+                  if (currentPage > 1) setCurrentPage(currentPage - 1);
                 }}
-                isActive={currentPage === page}
-              >
-                {page}
-              </PaginationLink>
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
             </PaginationItem>
-          ))}
-          
-          <PaginationItem>
-            <PaginationNext 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-              }}
-              className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(page);
+                  }}
+                  isActive={currentPage === page}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };
