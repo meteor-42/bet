@@ -163,7 +163,7 @@ export const MatchCard = ({ match }: MatchCardProps) => {
       {match.status === "live" && (
         <div className="pt-4 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
-            Текущий счет матча 1:3
+            Матч начался ...
           </p>
         </div>
       )}
