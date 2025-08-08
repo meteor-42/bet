@@ -9,22 +9,13 @@ import { useMatches } from "@/hooks/useMatches";
 const Index = () => {
   const { matches, loading } = useMatches();
 
-  // Преобразуем данные из базы в формат для компонентов
-  const formattedMatches = matches.map(match => ({
-    id: match.id,
-    homeTeam: match.home_team,
-    awayTeam: match.away_team,
-    date: match.match_date,
-    time: match.match_time,
-    league: match.league,
-    stage: match.stage,
-    status: match.status
-  }));
+  // Используем данные из базы напрямую
+  const formattedMatches = matches;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-12">
         <div className="space-y-12">
           {/* Header */}
