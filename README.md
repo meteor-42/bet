@@ -7,7 +7,7 @@ Follow these steps:
 git clone https://github.com/meteor-42/bet
 
 # Step 2: Navigate to the project directory.
-cd rpl
+cd bet
 
 # Step 3: Install the necessary dependencies.
 pnpm i
