@@ -162,6 +162,7 @@ export const useLeaderboard = () => {
         .select(`
           *,
           player:players(*)
+        )
         `)
         .eq('player_id', playerId)
         .single();
@@ -207,3 +208,6 @@ export const useLeaderboard = () => {
     refetch: fetchLeaderboard
   };
 };
+    }
+  }
+}
