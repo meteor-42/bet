@@ -79,20 +79,20 @@
 79|
 80|  const event = req.headers['x-github-event'];
 81|  const delivery = req.headers['x-github-delivery'];
-82|  console.log(`[deploy webhook] token ok, event=${event} delivery=${delivery}`);
-83|
-84|  try {
-85|    const { execFile } = await import('node:child_process');
-86|    const { promisify } = await import('node:util');
-87|    const pexecFile = promisify(execFile);
-88|    console.log('[deploy webhook] starting deploy.sh');
+82|  // minimal log
+83|  console.log('deploy: start');
+84|
+85|  try {
+86|    const { execFile } = await import('node:child_process');
+87|    const { promisify } = await import('node:util');
+88|    const pexecFile = promisify(execFile);
 89|    const scriptPath = path.join(__dirname, 'deploy.sh');
 90|    const { stdout, stderr } = await pexecFile('bash', [scriptPath], { cwd: __dirname, env: process.env, timeout: 15 * 60 * 1000 });
-91|    if (stdout) console.log('[deploy webhook] deploy stdout:\n' + stdout);
-92|    if (stderr) console.warn('[deploy webhook] deploy stderr:\n' + stderr);
+91|    // minimal success log
+92|    console.log('deploy: ok');
 93|    return res.json({ ok: true, message: 'Rebuilt successfully', event, delivery });
 94|  } catch (err) {
-95|    console.error('[deploy webhook] deploy failed', err);
+95|    console.error('deploy: failed');
 96|    return res.status(500).json({ ok: false, error: 'Deploy failed' });
 97|  }
 98|});
