@@ -35,7 +35,7 @@ if (!keyPath || !certPath) {
 app.use((req, res, next) => {
   const start = Date.now();
   const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '').toString();
-  
+
   res.on('finish', () => {
     const dur = Date.now() - start;
     const status = res.statusCode;
@@ -49,7 +49,7 @@ app.use((req, res, next) => {
     const statusColor = status >= 500 ? cRed : status >= 400 ? cYellow : cGreen;
     const now = new Date();
     const dateStr = now.toISOString();
-    
+
     const parts = [
       `${cBlue}${dateStr}${reset}`,
       `${cCyan}${ip}${reset}`,
@@ -58,10 +58,10 @@ app.use((req, res, next) => {
       `${statusColor}${status}${reset}`,
       `${cGreen}${dur}ms${reset}`,
     ];
-    
+
     console.log(parts.join(' '));
   });
-  
+
   next();
 });
 
@@ -74,30 +74,35 @@ app.use(express.json({ limit: '256kb' }));
 // GitHub webhook: POST /deploy?token=секретный_ключ (register BEFORE redirects/static/fallback)
 app.post('/deploy', async (req, res) => {
   const token = (req.query.token || '').toString();
-  
+
   if (!DEPLOY_TOKEN) {
     return res.status(500).json({ ok: false, error: 'DEPLOY_TOKEN is not configured on server' });
   }
-  
+
   if (!token || token !== DEPLOY_TOKEN) {
     return res.status(401).json({ ok: false, error: 'Unauthorized' });
   }
 
   const event = req.headers['x-github-event'];
   const delivery = req.headers['x-github-delivery'];
-  console.log('deploy: start');
+  const ip = (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket.remoteAddress || '').toString();
+  console.log(`deploy: request received ip=${ip} event=${event} delivery=${delivery}`);
 
   try {
     const { execFile } = await import('node:child_process');
     const { promisify } = await import('node:util');
     const pexecFile = promisify(execFile);
+
+    // Ensure repo is in sync with origin/main before build (hard reset)
+    console.log('deploy: git fetch');
+    await pexecFile('git', ['fetch', '--all'], { cwd: __dirname, env: process.env });
+    console.log('deploy: git reset --hard origin/main');
+    await pexecFile('git', ['reset', '--hard', 'origin/main'], { cwd: __dirname, env: process.env });
+
+    // Run deploy script (build)
+    console.log('deploy: start');
     const scriptPath = path.join(__dirname, 'deploy.sh');
-    const { stdout, stderr } = await pexecFile('bash', [scriptPath], { 
-      cwd: __dirname, 
-      env: process.env, 
-      timeout: 15 * 60 * 1000 
-    });
-    
+    const { stdout, stderr } = await pexecFile('bash', [scriptPath], { cwd: __dirname, env: process.env, timeout: 15 * 60 * 1000 });
     console.log('deploy: ok');
     return res.json({ ok: true, message: 'Rebuilt successfully', event, delivery });
   } catch (err) {
@@ -111,12 +116,12 @@ if (ENABLE_WWW_REDIRECT && PRIMARY_DOMAIN) {
   app.use((req, res, next) => {
     if (req.path === '/deploy') return next();
     const host = req.headers.host || '';
-    
+
     if (host.startsWith('www.')) {
       const redirectTo = `${req.protocol}://${PRIMARY_DOMAIN}${req.originalUrl}`;
       return res.redirect(301, redirectTo);
     }
-    
+
     next();
   });
 }
@@ -125,13 +130,13 @@ if (ENABLE_WWW_REDIRECT && PRIMARY_DOMAIN) {
 if (FORCE_HTTPS) {
   app.use((req, res, next) => {
     if (req.path === '/deploy') return next();
-    
+
     if (!req.secure) {
       const host = req.headers.host ? req.headers.host.split(':')[0] : PRIMARY_DOMAIN || '';
       const url = `https://${host}${req.originalUrl}`;
       return res.redirect(301, url);
     }
-    
+
     next();
   });
 }
@@ -145,16 +150,16 @@ app.use('/assets', express.static(path.join(outDir, 'assets'), {
 }));
 
 // Serve other static files with shorter cache
-app.use(express.static(outDir, { 
-  maxAge: '1h', 
-  extensions: ['html'] 
+app.use(express.static(outDir, {
+  maxAge: '1h',
+  extensions: ['html']
 }));
 
 // SPA fallback middleware: for any non-file request (skip /deploy), send index.html with no-cache
 app.get('*', (req, res, next) => {
   if (req.path === '/deploy') return next();
   if (path.extname(req.path)) return next();
-  
+
   res.set('Cache-Control', 'no-cache');
   res.sendFile(path.join(outDir, 'index.html'));
 });
