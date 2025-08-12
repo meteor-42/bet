@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => ({
     // Очищаем каталог перед сборкой
     emptyOutDir: true,
     // Разрешим варнинги до 1500 кб (после оптимизаций обычно не потребуется)
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 500,
     // rollupOptions manualChunks temporarily disabled for diagnostics
     // rollupOptions: {
     //   output: {

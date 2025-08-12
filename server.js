@@ -1,165 +1,183 @@
-1|// Express static server for Vite build in ./out (ESM)
-2|import express from 'express';
-3|import path from 'path';
-4|import fs from 'fs';
-5|import http from 'http';
-6|import https from 'https';
-7|import { fileURLToPath } from 'url';
-8|
-9|const __filename = fileURLToPath(import.meta.url);
-10|const __dirname = path.dirname(__filename);
-11|
-12|const app = express();
-13|
-14|// Env configuration (always run in production mode)
-15|const PRIMARY_DOMAIN = process.env.PRIMARY_DOMAIN || '';
-16|const ENABLE_WWW_REDIRECT = (process.env.ENABLE_WWW_REDIRECT || 'true').toLowerCase() === 'true';
-17|const FORCE_HTTPS = (process.env.FORCE_HTTPS || 'true').toLowerCase() === 'true';
-18|const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || process.env.WEBHOOK_TOKEN || '';
-19|
-20|// Ports
-21|const HTTP_PORT = 80;
-22|const HTTPS_PORT = Number(process.env.PORT) || 443;
-23|
-24|// SSL options (cert paths must be provided)
-25|const keyPath = process.env.TLS_KEY;
-26|const certPath = process.env.TLS_CERT;
-27|const caPath = process.env.TLS_CA;
-28|
-29|if (!keyPath || !certPath) {
-30|  console.error('TLS_KEY and TLS_CERT must be set for production');
-31|  process.exit(1);
-32|}
-33|
-34|// Simple colored request logger
-35|app.use((req, res, next) => {
-36|  const start = Date.now();
-37|  const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '').toString();
-38|  res.on('finish', () => {
-39|    const dur = Date.now() - start;
-40|    const status = res.statusCode;
-41|    const cRed = '\x1b[31m';
-42|    const cYellow = '\x1b[33m';
-43|    const cGreen = '\x1b[32m';
-44|    const cCyan = '\x1b[36m';
-45|    const cBlue = '\x1b[34m';
-46|    const cMagenta = '\x1b[35m';
-47|    const reset = '\x1b[0m';
-48|    const statusColor = status >= 500 ? cRed : status >= 400 ? cYellow : cGreen;
-49|    const now = new Date();
-50|    const dateStr = now.toISOString();
-51|    const parts = [
-52|      `${cBlue}${dateStr}${reset}`,
-53|      `${cCyan}${ip}${reset}`,
-54|      `${cMagenta}${req.method}${reset}`,
-55|      `${cMagenta}${req.originalUrl}${reset}`,
-56|      `${statusColor}${status}${reset}`,
-57|      `${cGreen}${dur}ms${reset}`,
-58|    ];
-59|    console.log(parts.join(' '));
-60|  });
-61|  next();
-62|});
-63|
-64|// Trust proxy so that req.secure works correctly behind proxies
-65|app.enable('trust proxy');
-66|
-67|// Parse JSON for webhook (must be before routes)
-68|app.use(express.json({ limit: '256kb' }));
-69|
-70|// GitHub webhook: POST /deploy?token=секретный_ключ (register BEFORE redirects/static/fallback)
-71|app.post('/deploy', async (req, res) => {
-72|  const token = (req.query.token || '').toString();
-73|  if (!DEPLOY_TOKEN) {
-74|    return res.status(500).json({ ok: false, error: 'DEPLOY_TOKEN is not configured on server' });
-75|  }
-76|  if (!token || token !== DEPLOY_TOKEN) {
-77|    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-78|  }
-79|
-80|  const event = req.headers['x-github-event'];
-81|  const delivery = req.headers['x-github-delivery'];
-82|  // minimal log
-83|  console.log('deploy: start');
-84|
-85|  try {
-86|    const { execFile } = await import('node:child_process');
-87|    const { promisify } = await import('node:util');
-88|    const pexecFile = promisify(execFile);
-89|    const scriptPath = path.join(__dirname, 'deploy.sh');
-90|    const { stdout, stderr } = await pexecFile('bash', [scriptPath], { cwd: __dirname, env: process.env, timeout: 15 * 60 * 1000 });
-91|    // minimal success log
-92|    console.log('deploy: ok');
-93|    return res.json({ ok: true, message: 'Rebuilt successfully', event, delivery });
-94|  } catch (err) {
-95|    console.error('deploy: failed');
-96|    return res.status(500).json({ ok: false, error: 'Deploy failed' });
-97|  }
-98|});
-99|
-100|// Redirect www -> non-www (if enabled and PRIMARY_DOMAIN specified), skip /deploy
-101|if (ENABLE_WWW_REDIRECT && PRIMARY_DOMAIN) {
-102|  app.use((req, res, next) => {
-103|    if (req.path === '/deploy') return next();
-104|    const host = req.headers.host || '';
-105|    if (host.startsWith('www.')) {
-106|      const redirectTo = `${req.protocol}://${PRIMARY_DOMAIN}${req.originalUrl}`;
-107|      return res.redirect(301, redirectTo);
-108|    }
-109|    next();
-110|  });
-111|}
-112|
-113|// HTTP->HTTPS redirect (if forced), skip /deploy
-114|if (FORCE_HTTPS) {
-115|  app.use((req, res, next) => {
-116|    if (req.path === '/deploy') return next();
-115|    if (!req.secure) {
-116|      const host = req.headers.host ? req.headers.host.split(':')[0] : PRIMARY_DOMAIN || '';
-117|      const url = `https://${host}${req.originalUrl}`;
-118|      return res.redirect(301, url);
-119|    }
-120|    next();
-121|  });
-122|}
-123|
-124|const outDir = path.resolve(__dirname, 'out');
-125|
-126|// Serve static assets with long cache for hashed assets
-127|app.use('/assets', express.static(path.join(outDir, 'assets'), {
-128|  immutable: true,
-129|  maxAge: '1y',
-130|}));
-131|
-132|// Serve other static files with shorter cache
-133|app.use(express.static(outDir, { maxAge: '1h', extensions: ['html'] }));
-134|
-135|// SPA fallback middleware: for any non-file request (skip /deploy), send index.html with no-cache
-136|app.get('*', (req, res, next) => {
-137|  if (req.path === '/deploy') return next();
-138|  if (path.extname(req.path)) return next();
-139|  res.set('Cache-Control', 'no-cache');
-140|  res.sendFile(path.join(outDir, 'index.html'));
-141|});
-142|
-143|// Create HTTPS and HTTP redirect servers
-144|const options = {
-145|  key: fs.readFileSync(keyPath),
-146|  cert: fs.readFileSync(certPath),
-147|  ...(caPath ? { ca: fs.readFileSync(caPath) } : {}),
-148|};
-149|
-150|https.createServer(options, app).listen(HTTPS_PORT, '0.0.0.0', () => {
-151|  console.log(`HTTPS server running at https://0.0.0.0:${HTTPS_PORT}`);
-152|});
-153|
-154|const httpApp = express();
-155|httpApp.enable('trust proxy');
-156|httpApp.use((req, res) => {
-157|  const host = req.headers.host ? req.headers.host.split(':')[0] : PRIMARY_DOMAIN || '';
-158|  const url = `https://${host}${req.originalUrl}`;
-159|  res.redirect(301, url);
-160|});
-161|http.createServer(httpApp).listen(HTTP_PORT, '0.0.0.0', () => {
-162|  console.log(`HTTP redirect server running at http://0.0.0.0:${HTTP_PORT}`);
-163|});
+// Express static server for Vite build in ./out (ESM)
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+
+// Env configuration (always run in production mode)
+const PRIMARY_DOMAIN = process.env.PRIMARY_DOMAIN || '';
+const ENABLE_WWW_REDIRECT = (process.env.ENABLE_WWW_REDIRECT || 'true').toLowerCase() === 'true';
+const FORCE_HTTPS = (process.env.FORCE_HTTPS || 'true').toLowerCase() === 'true';
+const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || process.env.WEBHOOK_TOKEN || '';
+
+// Ports
+const HTTP_PORT = 80;
+const HTTPS_PORT = Number(process.env.PORT) || 443;
+
+// SSL options (cert paths must be provided)
+const keyPath = process.env.TLS_KEY;
+const certPath = process.env.TLS_CERT;
+const caPath = process.env.TLS_CA;
+
+if (!keyPath || !certPath) {
+  console.error('TLS_KEY and TLS_CERT must be set for production');
+  process.exit(1);
+}
+
+// Simple colored request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '').toString();
+  
+  res.on('finish', () => {
+    const dur = Date.now() - start;
+    const status = res.statusCode;
+    const cRed = '\x1b[31m';
+    const cYellow = '\x1b[33m';
+    const cGreen = '\x1b[32m';
+    const cCyan = '\x1b[36m';
+    const cBlue = '\x1b[34m';
+    const cMagenta = '\x1b[35m';
+    const reset = '\x1b[0m';
+    const statusColor = status >= 500 ? cRed : status >= 400 ? cYellow : cGreen;
+    const now = new Date();
+    const dateStr = now.toISOString();
+    
+    const parts = [
+      `${cBlue}${dateStr}${reset}`,
+      `${cCyan}${ip}${reset}`,
+      `${cMagenta}${req.method}${reset}`,
+      `${cMagenta}${req.originalUrl}${reset}`,
+      `${statusColor}${status}${reset}`,
+      `${cGreen}${dur}ms${reset}`,
+    ];
+    
+    console.log(parts.join(' '));
+  });
+  
+  next();
+});
+
+// Trust proxy so that req.secure works correctly behind proxies
+app.enable('trust proxy');
+
+// Parse JSON for webhook (must be before routes)
+app.use(express.json({ limit: '256kb' }));
+
+// GitHub webhook: POST /deploy?token=секретный_ключ (register BEFORE redirects/static/fallback)
+app.post('/deploy', async (req, res) => {
+  const token = (req.query.token || '').toString();
+  
+  if (!DEPLOY_TOKEN) {
+    return res.status(500).json({ ok: false, error: 'DEPLOY_TOKEN is not configured on server' });
+  }
+  
+  if (!token || token !== DEPLOY_TOKEN) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+
+  const event = req.headers['x-github-event'];
+  const delivery = req.headers['x-github-delivery'];
+  console.log('deploy: start');
+
+  try {
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const pexecFile = promisify(execFile);
+    const scriptPath = path.join(__dirname, 'deploy.sh');
+    const { stdout, stderr } = await pexecFile('bash', [scriptPath], { 
+      cwd: __dirname, 
+      env: process.env, 
+      timeout: 15 * 60 * 1000 
+    });
+    
+    console.log('deploy: ok');
+    return res.json({ ok: true, message: 'Rebuilt successfully', event, delivery });
+  } catch (err) {
+    console.error('deploy: failed');
+    return res.status(500).json({ ok: false, error: 'Deploy failed' });
+  }
+});
+
+// Redirect www -> non-www (if enabled and PRIMARY_DOMAIN specified), skip /deploy
+if (ENABLE_WWW_REDIRECT && PRIMARY_DOMAIN) {
+  app.use((req, res, next) => {
+    if (req.path === '/deploy') return next();
+    const host = req.headers.host || '';
+    
+    if (host.startsWith('www.')) {
+      const redirectTo = `${req.protocol}://${PRIMARY_DOMAIN}${req.originalUrl}`;
+      return res.redirect(301, redirectTo);
+    }
+    
+    next();
+  });
+}
+
+// HTTP->HTTPS redirect (if forced), skip /deploy
+if (FORCE_HTTPS) {
+  app.use((req, res, next) => {
+    if (req.path === '/deploy') return next();
+    
+    if (!req.secure) {
+      const host = req.headers.host ? req.headers.host.split(':')[0] : PRIMARY_DOMAIN || '';
+      const url = `https://${host}${req.originalUrl}`;
+      return res.redirect(301, url);
+    }
+    
+    next();
+  });
+}
+
+const outDir = path.resolve(__dirname, 'out');
+
+// Serve static assets with long cache for hashed assets
+app.use('/assets', express.static(path.join(outDir, 'assets'), {
+  immutable: true,
+  maxAge: '1y',
+}));
+
+// Serve other static files with shorter cache
+app.use(express.static(outDir, { 
+  maxAge: '1h', 
+  extensions: ['html'] 
+}));
+
+// SPA fallback middleware: for any non-file request (skip /deploy), send index.html with no-cache
+app.get('*', (req, res, next) => {
+  if (req.path === '/deploy') return next();
+  if (path.extname(req.path)) return next();
+  
+  res.set('Cache-Control', 'no-cache');
+  res.sendFile(path.join(outDir, 'index.html'));
+});
+
+// Create HTTPS and HTTP redirect servers
+const sslOptions = {
+  key: fs.readFileSync(keyPath),
+  cert: fs.readFileSync(certPath),
+  ...(caPath ? { ca: fs.readFileSync(caPath) } : {}),
+};
+
+https.createServer(sslOptions, app).listen(HTTPS_PORT, '0.0.0.0', () => {
+  console.log(`HTTPS server running at https://0.0.0.0:${HTTPS_PORT}`);
+});
+
+const httpApp = express();
+httpApp.enable('trust proxy');
+httpApp.use((req, res) => {
+  const host = req.headers.host ? req.headers.host.split(':')[0] : PRIMARY_DOMAIN || '';
+  const url = `https://${host}${req.originalUrl}`;
+  res.redirect(301, url);
+});
+
+http.createServer(httpApp).listen(HTTP_PORT, '0.0.0.0', () => {
+  console.log(`HTTP redirect server running at http://0.0.0.0:${HTTP_PORT}`);
+});

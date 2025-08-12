@@ -6,7 +6,6 @@ out
 
 # environment files
 .env
-.env.*
 
 # logs
 logs
