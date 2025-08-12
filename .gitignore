@@ -1,30 +1,15 @@
-# Логи и временные файлы, создаваемые инструментами разработки
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Сторонние зависимости (восстанавливаются по package.json)
+# dependencies
 node_modules
 
-# Сборочные артефакты Vite/SSR
-dist
-dist-ssr
+# builds
+out
 
-# Локальные конфиги, не предназначенные для репозитория
-*.local
+# environment files
 .env
+.env.*
 
-# Каталоги и файлы IDE/редакторов
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# logs
+logs
+
+# misc
+bun.lockb

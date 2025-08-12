@@ -3,13 +3,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-# Export envs from .env and .env.production if exist, but DO NOT set NODE_ENV from files
+# Load only production env file
 set -a
-if [ -f .env ]; then
-  grep -v '^NODE_ENV=' .env > .env.tmp || true
-  . ./.env.tmp || true
-  rm -f .env.tmp
-fi
 if [ -f .env.production ]; then
   grep -v '^NODE_ENV=' .env.production > .env.production.tmp || true
   . ./.env.production.tmp || true
