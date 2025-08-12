@@ -46,30 +46,30 @@ export default defineConfig(({ mode }) => ({
     emptyOutDir: true,
     // Разрешим варнинги до 1500 кб (после оптимизаций обычно не потребуется)
     chunkSizeWarningLimit: 1500,
-    rollupOptions: {
-      output: {
-        // Базовый контролируемый сплит вендоров
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'vendor-radix';
-            }
-            if (id.includes('recharts')) {
-              return 'vendor-recharts';
-            }
-            if (id.includes('date-fns')) {
-              return 'vendor-datefns';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            return 'vendor';
-          }
-        },
-      },
-    },
+    // rollupOptions manualChunks temporarily disabled for diagnostics
+    // rollupOptions: {
+    //   output: {
+    //     manualChunks(id) {
+    //       if (id.includes('node_modules')) {
+    //         if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+    //           return 'vendor-react';
+    //         }
+    //         if (id.includes('@radix-ui')) {
+    //           return 'vendor-radix';
+    //         }
+    //         if (id.includes('recharts')) {
+    //           return 'vendor-recharts';
+    //         }
+    //         if (id.includes('date-fns')) {
+    //           return 'vendor-datefns';
+    //         }
+    //         if (id.includes('lucide-react')) {
+    //           return 'vendor-icons';
+    //         }
+    //         return 'vendor';
+    //       }
+    //     },
+    //   },
+    // },
   },
 }));
