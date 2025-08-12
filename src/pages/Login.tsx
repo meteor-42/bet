@@ -74,7 +74,7 @@ export const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Введите email"
+                  placeholder="Введите E-mail"
                   value={credentials.email}
                   onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                   className="pl-10"
