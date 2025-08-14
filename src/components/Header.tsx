@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { User, Settings, LogOut, History, Users } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { MyBets } from "@/components/MyBets";
+import { User, Settings, LogOut, History, Users, Table } from "lucide-react";
+
 import AdminPanel from "@/components/AdminPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, Suspense, lazy } from "react";
@@ -10,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 const PlayersAdmin = lazy(() => import("@/components/PlayersAdmin"));
 
 export const Header = () => {
   const { user, logout, isAdmin } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [openProfile, setOpenProfile] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -56,21 +57,25 @@ export const Header = () => {
       <div className="container mx-auto px-4 h-16 flex items-center justify-center">
         {/* Centered controls */}
         <div className="flex items-center gap-2 sm:gap-1">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-12 w-12 p-0 sm:h-8 sm:w-8" title="Мои ставки">
-                  <History className="w-6 h-6 sm:w-4 sm:h-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px]">
-                <SheetHeader className="bg-muted border-b border-border -mx-6 -mt-6 px-6 py-4">
-                  <SheetTitle>Мои ставки</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  <MyBets />
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 p-0 sm:h-8 sm:w-8"
+              title="Все ставки"
+              onClick={() => navigate('/bets')}
+            >
+              <Table className="w-6 h-6 sm:w-4 sm:h-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 p-0 sm:h-8 sm:w-8"
+              title="Мои ставки"
+              onClick={() => navigate('/bets?tab=my')}
+            >
+              <History className="w-6 h-6 sm:w-4 sm:h-4" />
+            </Button>
 
             <Dialog open={openProfile} onOpenChange={setOpenProfile}>
               <DialogTrigger asChild>
