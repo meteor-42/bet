@@ -49,18 +49,32 @@ export const StatsCard = () => {
     );
   }
 
+  // Расчет количества дней с момента регистрации
+  const calculateDaysSince = (dateString: string | undefined) => {
+    if (!dateString) return 0;
+    const registrationDate = new Date(dateString);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - registrationDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   const statsItems: StatItem[] = [
     {
-      label: "Всего очков",
+      label: "Очков",
       value: stats?.points?.toLocaleString() || "0",
     },
-    {
+    { 
       label: "Точность",
       value: `${stats?.accuracy || 0}%`,
     },
     {
-      label: "Верных ставок",
-      value: `${stats?.correct_predictions || 0}/${stats?.total_predictions || 0}`,
+      label: "Верных",
+      value: `${stats?.correct_predictions || 0}`,
+    },
+    {
+      label: "Ставок",
+      value: `${stats?.total_predictions || 0}`,
     },
     {
       label: "Место",
@@ -76,6 +90,8 @@ export const StatsCard = () => {
         day: 'numeric'
       })
     : 'Неизвестно';
+
+  const daysSinceRegistration = calculateDaysSince(stats?.created_at);
 
   return (
     <Card className="p-6 border border-border">
@@ -96,7 +112,7 @@ export const StatsCard = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {statsItems.map((stat, index) => (
             <div
               key={index}
@@ -117,9 +133,15 @@ export const StatsCard = () => {
         </div>
 
         <div className="p-4 border border-border">
-          <p className="text-sm text-foreground text-center">
-            Вы зарегистрированы с {registrationDate}
-          </p>
+          <div className="text-sm text-center space-y-1">
+            <p className="text-foreground">
+              Вы зарегистрированы с {registrationDate}
+            </p>
+            <p className="text-muted-foreground">
+              ({daysSinceRegistration} {daysSinceRegistration === 1 ? 'день' :
+                daysSinceRegistration < 5 ? 'дня' : 'дней'})
+            </p>
+          </div>
         </div>
       </div>
     </Card>
