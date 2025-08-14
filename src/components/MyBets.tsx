@@ -26,24 +26,24 @@ export const MyBets = () => {
   const [currentTab, setCurrentTab] = useState("my");
   const [currentPage, setCurrentPage] = useState(1);
   const [allBetsCurrentPage, setAllBetsCurrentPage] = useState(1);
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("all");
+  const [selectedTour, setSelectedTour] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const betsPerPage = 10;
+  const betsPerPage = 7; // Изменено с 10 на 7
 
   // Фильтрация всех ставок
   const filteredAllBets = allBets.filter(bet => {
-    const playerMatch = selectedPlayer === "all" || bet.player_id === selectedPlayer;
+    const tourMatch = selectedTour === "all" || bet.match.tour?.toString() === selectedTour;
     const searchMatch = !searchTerm ||
       bet.match.home_team.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bet.match.away_team.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bet.player.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return playerMatch && searchMatch;
+    return tourMatch && searchMatch;
   });
 
-  // Получить уникальных игроков
-  const uniquePlayers = Array.from(
-    new Map(allBets.map(bet => [bet.player.id, bet.player])).values()
-  );
+  // Получить уникальные туры
+  const uniqueTours = Array.from(
+    new Set(allBets.map(bet => bet.match.tour).filter(tour => tour !== null && tour !== undefined))
+  ).sort((a, b) => a - b);
 
   // Пагинация для моих ставок
   const myBetsTotalPages = Math.ceil(myBets.length / betsPerPage);
@@ -60,7 +60,7 @@ export const MyBets = () => {
     .reduce((sum, bet) => sum + (bet.points_earned || 0), 0);
 
   const getStatusText = (bet: typeof myBets[0]) => {
-    if (!bet.is_calculated) return "Ставка не рассчитана";
+    if (!bet.is_calculated) return "Не рассчитано";
     if ((bet.points_earned || 0) === 3) return "Точный счет";
     if ((bet.points_earned || 0) === 1) return "Исход";
     return "Промах";
@@ -73,7 +73,7 @@ export const MyBets = () => {
   };
 
   const resetFilters = () => {
-    setSelectedPlayer("all");
+    setSelectedTour("all");
     setSearchTerm("");
     setAllBetsCurrentPage(1);
   };
@@ -96,30 +96,92 @@ export const MyBets = () => {
       <div className="space-y-2">
         {bets.map((bet, idx) => (
           <Card key={bet.id} className="p-3 border border-border">
-            <div className="flex items-center justify-between gap-3">
+            {/* Desktop view - one line */}
+            <div className="hidden sm:flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="shrink-0 w-6 h-6 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
                   #{indexOffset + idx + 1}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium text-foreground truncate">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {bet.match.match_date} {bet.match.match_time}
+                    </span>
+                    <span className="font-medium text-foreground">
                       {bet.match.home_team} vs {bet.match.away_team}
                     </span>
-                    {showPlayer && 'player' in bet && (
-                      <span className="text-muted-foreground">• {bet.player.name}</span>
+                    {bet.match.tour && (
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        ТУР {bet.match.tour}
+                      </span>
                     )}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{bet.match.match_date} {bet.match.match_time}</span>
-                    <span>Прогноз: {bet.predicted_home_score}-{bet.predicted_away_score}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      Прогноз: {bet.predicted_home_score}-{bet.predicted_away_score}
+                    </span>
                     {bet.match.status === 'finished' && bet.match.home_score !== null && bet.match.away_score !== null && (
-                      <span>Результат: {bet.match.home_score}-{bet.match.away_score}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        Результат: {bet.match.home_score}-{bet.match.away_score}
+                      </span>
+                    )}
+                    {showPlayer && 'player' in bet && (
+                      <span className="text-xs text-muted-foreground">• {bet.player.name}</span>
                     )}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <Badge variant={
+                  bet.match.status === 'finished' ? 'default' :
+                  bet.match.status === 'live' ? 'destructive' : 'secondary'
+                } className="text-xs whitespace-nowrap">
+                  {bet.match.status === 'finished' ? 'Завершен' : bet.match.status === 'live' ? 'Идет' : 'Ожидается'}
+                </Badge>
+                <Badge variant={getStatusVariant(bet)} className="text-xs whitespace-nowrap">
+                  {bet.is_calculated ? `${(bet.points_earned || 0) > 0 ? "+" : ""}${bet.points_earned || 0}` : getStatusText(bet)}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Mobile view - column layout */}
+            <div className="sm:hidden space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="shrink-0 w-6 h-6 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                    #{indexOffset + idx + 1}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {bet.match.match_date} {bet.match.match_time}
+                  </span>
+                </div>
+                {bet.match.tour && (
+                  <span className="text-xs font-medium text-muted-foreground">
+                    ТУР {bet.match.tour}
+                  </span>
+                )}
+              </div>
+
+              <div className="font-medium text-sm text-foreground">
+                {bet.match.home_team} vs {bet.match.away_team}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Прогноз: <span className="font-medium">{bet.predicted_home_score}-{bet.predicted_away_score}</span>
+                </span>
+                {bet.match.status === 'finished' && bet.match.home_score !== null && bet.match.away_score !== null && (
+                  <span className="text-xs text-muted-foreground">
+                    Результат: <span className="font-medium">{bet.match.home_score}-{bet.match.away_score}</span>
+                  </span>
+                )}
+              </div>
+
+              {showPlayer && 'player' in bet && (
+                <div className="text-xs text-muted-foreground">
+                  Игрок: {bet.player.name}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
                 <Badge variant={
                   bet.match.status === 'finished' ? 'default' :
                   bet.match.status === 'live' ? 'destructive' : 'secondary'
@@ -227,22 +289,22 @@ export const MyBets = () => {
 
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
-                <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
+                <Select value={selectedTour} onValueChange={setSelectedTour}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Выберите игрока" />
+                    <SelectValue placeholder="Выберите тур" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Все игроки</SelectItem>
-                    {uniquePlayers.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
-                        {player.name}
+                    <SelectItem value="all">Все туры</SelectItem>
+                    {uniqueTours.map((tour) => (
+                      <SelectItem key={tour} value={tour.toString()}>
+                        Тур {tour}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {(selectedPlayer !== "all" || searchTerm) && (
+              {(selectedTour !== "all" || searchTerm) && (
                 <Button variant="outline" size="sm" onClick={resetFilters}>
                   Сбросить
                 </Button>
@@ -257,7 +319,11 @@ export const MyBets = () => {
               <div className="text-sm text-muted-foreground">Всего ставок</div>
             </Card>
             <Card className="p-4 text-center">
-              <div className="text-2xl font-bold text-foreground">{uniquePlayers.length}</div>
+              <div className="text-2xl font-bold text-foreground">
+                {Array.from(
+                  new Map(allBets.map(bet => [bet.player.id, bet.player])).values()
+                ).length}
+              </div>
               <div className="text-sm text-muted-foreground">Игроков</div>
             </Card>
             <Card className="p-4 text-center">
