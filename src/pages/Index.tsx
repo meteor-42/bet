@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { MatchSlider } from "@/components/MatchSlider";
 import { Leaderboard } from "@/components/Leaderboard";
 import { StatsCard } from "@/components/StatsCard";
+import { MyBets } from "@/components/MyBets";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActiveMatches } from "@/hooks/useActiveMatches";
 import { Trophy, MessageCircle, Goal } from "lucide-react";
@@ -45,8 +46,9 @@ const Index = () => {
 
           {/* Navigation */}
           <Tabs defaultValue="matches" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto h-10">
+            <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto h-10">
               <TabsTrigger value="matches" className="text-sm">Матчи</TabsTrigger>
+              <TabsTrigger value="bets" className="text-sm">Ставки</TabsTrigger>
               <TabsTrigger value="leaderboard" className="text-sm">Рейтинг</TabsTrigger>
               <TabsTrigger value="stats" className="text-sm">Статистика</TabsTrigger>
             </TabsList>
@@ -61,7 +63,12 @@ const Index = () => {
                 <MatchSlider matches={formattedMatches} />
               </div>
               )}
-              {/* GameRules removed as per request */}
+            </TabsContent>
+
+            <TabsContent value="bets" className="mt-12">
+              <div className="max-w-4xl mx-auto">
+                <MyBets />
+              </div>
             </TabsContent>
 
             <TabsContent value="leaderboard" className="mt-12">
