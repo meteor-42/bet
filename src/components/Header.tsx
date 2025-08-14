@@ -53,29 +53,9 @@ export const Header = () => {
 
   return (
     <header className="border-b border-border bg-background">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Left: Logo and title/version (admin only). For non-admins, logo hidden and center title below. */}
-        <div className="hidden sm:flex items-center gap-3 h-12">
-          <div className="w-12 h-12 bg-primary rounded-sm flex items-center justify-center">
-            <div className="w-6 h-6 bg-primary-foreground rounded-sm"></div>
-          </div>
-          {isAdmin && (
-            <div className="hidden sm:flex flex-row items-center h-12 gap-2">
-              <h1 className="text-base sm:text-lg font-medium text-foreground">Прогнозы</h1>
-            </div>
-          )}
-        </div>
-
-        {/* Center title for non-admins */}
-        {!isAdmin && (
-          <div className="absolute left-1/2 -translate-x-1/2">
-            <h1 className="text-base sm:text-lg font-medium text-foreground leading-[64px]">Прогнозы</h1>
-          </div>
-        )}
-
-        {/* Right controls */}
-        <div className="flex-1 flex sm:justify-end justify-center">
-          <div className="flex items-center gap-2 sm:gap-1">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-center">
+        {/* Centered controls */}
+        <div className="flex items-center gap-2 sm:gap-1">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-12 w-12 p-0 sm:h-8 sm:w-8" title="Мои ставки">
@@ -175,7 +155,6 @@ export const Header = () => {
             >
               <LogOut className="w-6 h-6 sm:w-4 sm:h-4" />
             </Button>
-          </div>
         </div>
       </div>
     </header>
