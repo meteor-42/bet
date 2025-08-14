@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import { Login } from "./pages/Login";
+import { AllBets } from "./pages/AllBets";
 import NotFound from "./pages/NotFound";
 import { Suspense, lazy } from "react";
 
@@ -29,6 +30,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bets"
+              element={
+                <ProtectedRoute>
+                  <AllBets />
                 </ProtectedRoute>
               }
             />
