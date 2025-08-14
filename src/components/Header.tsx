@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { User, Settings, LogOut, History, Users, Table } from "lucide-react";
-
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import AdminPanel from "@/components/AdminPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, Suspense, lazy } from "react";
