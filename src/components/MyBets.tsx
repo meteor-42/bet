@@ -74,9 +74,10 @@ export const MyBets = () => {
   const formatPlayerName = (name: string) => {
     const parts = name.split(' ');
     if (parts.length >= 2) {
-      const firstName = parts[0];
-      const lastName = parts.slice(1).join(' ');
-      return `${firstName.charAt(0).toUpperCase()}.${lastName}`;
+      // Если в базе "Фамилия Имя" -> "Фамилия И."
+      const lastName = parts[0]; // Фамилия
+      const firstName = parts[1]; // Имя
+      return `${lastName} ${firstName.charAt(0).toUpperCase()}.`;
     }
     return name;
   };
@@ -108,70 +109,98 @@ export const MyBets = () => {
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {bets.map((bet, idx) => (
-          <Card key={bet.id} className="p-4 border border-border hover:bg-muted/50 hover:shadow-md transition-all duration-200 cursor-pointer">
-            {/* Desktop view - one line with badges */}
-            <div className="hidden sm:flex items-center gap-2 min-h-[2.5rem]">
-              <Badge variant="outline" className="h-8 px-3 flex items-center justify-center font-mono text-xs min-w-[3rem] rounded-none">
+          <Card key={bet.id} className="p-3 border border-border hover:bg-muted/20 hover:shadow-sm transition-all duration-200 cursor-pointer">
+            {/* Desktop view - compact one line with all info */}
+            <div className="hidden sm:flex items-center gap-2 min-h-[2rem]">
+              <Badge variant="secondary" className="h-7 px-2 flex items-center justify-center font-mono text-xs min-w-[2.5rem] rounded-none border-0">
                 #{indexOffset + idx + 1}
               </Badge>
 
-              <Badge variant="secondary" className="h-8 px-3 flex items-center justify-center text-xs whitespace-nowrap rounded-none">
-                {bet.match.match_date} {formatTime(bet.match.match_time)}
-              </Badge>
-
-
-
-
-
-
-
-
-
-              <div className="w-px h-6 bg-border mx-1"></div>
-
-              {showPlayer && 'player' in bet && (
-                <Badge variant="outline" className="h-8 px-3 flex items-center justify-center text-xs max-w-[120px] truncate rounded-none">
-                  {formatPlayerName(bet.player.name)}
+              {bet.match.tour && (
+                <Badge variant="secondary" className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
+                  Тур {bet.match.tour}
                 </Badge>
               )}
 
-              <div className="w-px h-6 bg-border mx-1"></div>
+              <Badge variant="secondary" className="h-7 px-2 flex items-center justify-center text-xs whitespace-nowrap rounded-none">
+                {bet.match.match_date} {formatTime(bet.match.match_time)}
+              </Badge>
+
+              <div className="flex items-center text-xs font-medium min-w-[200px] max-w-[250px]">
+                <span className="truncate">{bet.match.home_team}</span>
+                <span className="mx-1">-</span>
+                <span className="truncate">{bet.match.away_team}</span>
+              </div>
+
+              <Badge variant="outline" className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
+                {bet.predicted_home_score}:{bet.predicted_away_score}
+              </Badge>
+
+              {bet.match.status === 'finished' && bet.match.home_score !== null && bet.match.away_score !== null && (
+                <Badge variant="default" className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
+                  {bet.match.home_score}:{bet.match.away_score}
+                </Badge>
+              )}
+
+              {showPlayer && 'player' in bet && (
+                <Badge variant="outline" className="h-7 px-2 flex items-center justify-center text-xs max-w-[120px] truncate rounded-none">
+                  {formatPlayerName(bet.player.name)}
+                </Badge>
+              )}
 
               <div className="flex items-center gap-2 ml-auto">
                 <Badge variant={
                   bet.match.status === 'finished' ? 'default' :
                   bet.match.status === 'live' ? 'destructive' : 'secondary'
-                } className="h-8 px-3 flex items-center justify-center text-xs rounded-none">
+                } className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
                   {bet.match.status === 'finished' ? 'Завершен' : bet.match.status === 'live' ? 'Идет' : 'Не начат'}
                 </Badge>
-                <Badge variant={getStatusVariant(bet)} className="h-8 px-3 flex items-center justify-center text-xs min-w-[4rem] rounded-none">
+                <Badge variant={getStatusVariant(bet)} className="h-7 px-2 flex items-center justify-center text-xs min-w-[3rem] rounded-none">
                   {bet.is_calculated ? `${(bet.points_earned || 0) > 0 ? "+" : ""}${bet.points_earned || 0}` : getStatusText(bet)}
                 </Badge>
               </div>
             </div>
 
-            {/* Mobile view - column layout with badges */}
-            <div className="sm:hidden space-y-3">
+            {/* Mobile view - compact column layout */}
+            <div className="sm:hidden space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="h-7 px-2 flex items-center justify-center font-mono text-xs rounded-none">
+                  <Badge variant="outline" className="h-6 px-2 flex items-center justify-center font-mono text-xs rounded-none">
                     #{indexOffset + idx + 1}
                   </Badge>
-                  <Badge variant="secondary" className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
+                  {bet.match.tour && (
+                    <Badge variant="secondary" className="h-6 px-2 flex items-center justify-center text-xs rounded-none">
+                      Тур {bet.match.tour}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="h-6 px-2 flex items-center justify-center text-xs rounded-none">
                     {bet.match.match_date} {formatTime(bet.match.match_time)}
                   </Badge>
                 </div>
-
               </div>
 
-
-
-
+              <div className="flex items-center justify-between text-xs">
+                <div className="font-medium flex items-center">
+                  <span className="truncate max-w-[100px]">{bet.match.home_team}</span>
+                  <span className="mx-1">-</span>
+                  <span className="truncate max-w-[100px]">{bet.match.away_team}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="h-6 px-2 flex items-center justify-center text-xs rounded-none">
+                    {bet.predicted_home_score}:{bet.predicted_away_score}
+                  </Badge>
+                  {bet.match.status === 'finished' && bet.match.home_score !== null && bet.match.away_score !== null && (
+                    <Badge variant="default" className="h-6 px-2 flex items-center justify-center text-xs rounded-none">
+                      {bet.match.home_score}:{bet.match.away_score}
+                    </Badge>
+                  )}
+                </div>
+              </div>
 
               {showPlayer && 'player' in bet && (
-                <Badge variant="outline" className="h-7 px-2 flex items-center justify-center text-xs w-full rounded-none">
+                <Badge variant="outline" className="h-6 px-2 flex items-center justify-center text-xs w-full rounded-none">
                   {formatPlayerName(bet.player.name)}
                 </Badge>
               )}
@@ -180,10 +209,10 @@ export const MyBets = () => {
                 <Badge variant={
                   bet.match.status === 'finished' ? 'default' :
                   bet.match.status === 'live' ? 'destructive' : 'secondary'
-                } className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
+                } className="h-6 px-2 flex items-center justify-center text-xs rounded-none">
                   {bet.match.status === 'finished' ? 'Завершен' : bet.match.status === 'live' ? 'Идет' : 'Не начат'}
                 </Badge>
-                <Badge variant={getStatusVariant(bet)} className="h-7 px-2 flex items-center justify-center text-xs rounded-none">
+                <Badge variant={getStatusVariant(bet)} className="h-6 px-2 flex items-center justify-center text-xs rounded-none">
                   {bet.is_calculated ? `${(bet.points_earned || 0) > 0 ? "+" : ""}${bet.points_earned || 0}` : getStatusText(bet)}
                 </Badge>
               </div>
