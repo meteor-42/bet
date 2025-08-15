@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePlayersCount } from '@/hooks/usePlayersCount';
 import { useBetsCount } from '@/hooks/useBetsCount';
 
-const VERSION = "1.15";
+const VERSION = "1.16";
 
 export const Login = () => {
   const { login, isLoading, user } = useAuth();
