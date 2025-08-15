@@ -66,7 +66,7 @@ export const Login = () => {
             </div>
             <h1 className="text-2xl font-medium text-foreground">Футбольные прогнозы</h1>
             <p className="text-sm text-muted-foreground">
-              Войдите в систему для участия
+              Войдите в систему для участия в ставках
             </p>
           </div>
 
