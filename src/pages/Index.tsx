@@ -32,15 +32,6 @@ const Index = () => {
                 <Goal className="w-4 h-4" />
                 1 очко за точный результат
               </span>
-              <a
-                href="https://t.me/fabiocapello"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 hover:text-foreground transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Обратная связь @fabiocapello
-              </a>
             </p>
           </div>
 
